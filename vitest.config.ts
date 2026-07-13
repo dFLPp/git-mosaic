@@ -25,6 +25,9 @@ export default defineConfig({
       "@git-mosaic/renderer": fileURLToPath(
         new URL("./packages/renderer/src/index.ts", import.meta.url),
       ),
+      "@git-mosaic/text": fileURLToPath(
+        new URL("./packages/text/src/index.ts", import.meta.url),
+      ),
       "@git-mosaic/schemas/plan-integrity": fileURLToPath(
         new URL("./packages/schemas/src/plan-integrity.ts", import.meta.url),
       ),

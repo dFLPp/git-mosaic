@@ -179,6 +179,15 @@ importers:
         specifier: ^3.24.3
         version: 3.25.76
 
+  packages/text:
+    dependencies:
+      '@git-mosaic/calendar':
+        specifier: workspace:*
+        version: link:../calendar
+      '@git-mosaic/schemas':
+        specifier: workspace:*
+        version: link:../schemas
+
 packages:
 
   '@adobe/css-tools@4.5.0':
