@@ -22,6 +22,27 @@ and, when available, a hint.
 | `GM013` | checksum mismatch                          | restore or regenerate the plan; do not hand-edit it                                 |
 | `GM014` | future date                                | choose a past period or intentionally plan with `--allow-future`                    |
 | `GM015` | unsupported/bad image                      | valid PNG/JPEG/WebP, positive finite contrast                                       |
+| `GM016` | text does not fit                          | compare needed/available columns; shorten the text or split it across projects      |
+| `GM017` | unsupported text                           | use A-Z, 0-9, space, or one of `. ! ? - :`                                          |
+| `GM018` | low image expressibility                   | review fit signals/remedies; simplify/crop the image or intentionally use `--force` |
+
+## Text import is refused
+
+`GM016` includes the exact number of columns needed at the smallest legible
+`3x5` font and the number available. Shorten the text or split it across
+multiple year projects. `GM017` names the unsupported character; the built-in
+fonts support A-Z, 0-9, space, and `. ! ? - :` (lowercase input is uppercased).
+The failed import does not modify the project.
+
+## Image import reports low expressibility
+
+`GM018` means too little of the source is expected to survive the seven-row
+grid. `aspectEfficiency` measures how well the source shape uses the wide
+canvas, `edgeSurvival` estimates how much structural edge energy remains per
+cell, and `toneSeparability` measures use of the five shades. Follow the
+reported crop, simplify, contrast, binary-mode, or dithering remedy. Use
+`--force` only after inspecting the bad fit and deliberately accepting it; the
+unforced failure writes neither the asset nor the project update.
 
 ## `gm` is not found
 

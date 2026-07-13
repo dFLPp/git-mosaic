@@ -27,24 +27,28 @@
 ### Task 1: Initialize git repository
 
 **Files:**
+
 - Create: `.git/` (via `git init`)
 
 **Interfaces:**
+
 - Consumes: nothing
 - Produces: a repository so every later task can commit; baseline commit of the current tree
 
-- [ ] **Step 1: Initialize and verify**
+- [x] **Step 1: Initialize and verify**
 
 Run:
+
 ```bash
 cd /home/default/projects/git-mosaic
 git init -b main
 git add -A
 git status --short | head -20
 ```
+
 Expected: staged file list; no errors. `.gitignore` already exists and excludes `node_modules`, `dist`.
 
-- [ ] **Step 2: Baseline commit**
+- [x] **Step 2: Baseline commit**
 
 ```bash
 git commit -m "chore: baseline before fit-engine work
@@ -52,7 +56,7 @@ git commit -m "chore: baseline before fit-engine work
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
-- [ ] **Step 3: Sanity — build and test the baseline**
+- [x] **Step 3: Sanity — build and test the baseline**
 
 Run: `pnpm install && pnpm build && pnpm test`
 Expected: all existing tests PASS. If the baseline fails, STOP and report — do not fix pre-existing failures inside this plan.
@@ -62,11 +66,13 @@ Expected: all existing tests PASS. If the baseline fails, STOP and report — do
 ### Task 2: Schemas — fit report, text source, new error codes
 
 **Files:**
+
 - Modify: `packages/schemas/src/errors.ts` (add three codes)
 - Modify: `packages/schemas/src/index.ts` (fit report + text source + image source fields)
 - Test: `packages/schemas/src/fit.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: existing `zod` patterns in `packages/schemas/src/index.ts`
 - Produces (used by Tasks 6–14):
   - `fitVerdictSchema`, `fitReportSchema`, types `FitVerdict`, `FitReport`
@@ -74,7 +80,7 @@ Expected: all existing tests PASS. If the baseline fails, STOP and report — do
   - `imageSourceSchema` gains `mode` (`"levels" | "binary"`, default `"levels"`) and `normalize` (boolean, default `true`)
   - Error names `TEXT_DOES_NOT_FIT` (GM016), `UNSUPPORTED_TEXT` (GM017), `LOW_EXPRESSIBILITY` (GM018)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/schemas/src/fit.test.ts`:
 
@@ -94,10 +100,16 @@ describe("fit report schema", () => {
     const report = fitReportSchema.parse({
       verdict: "degraded",
       score: 0.42,
-      signals: { aspectEfficiency: 0.9, edgeSurvival: 0.4, toneSeparability: 0.7 },
+      signals: {
+        aspectEfficiency: 0.9,
+        edgeSurvival: 0.4,
+        toneSeparability: 0.7,
+      },
       survives: ["large shapes and strong edges"],
       lost: ["fine detail smaller than one week/day cell"],
-      remedies: ["simplify the source or use --mode binary for line art and text"],
+      remedies: [
+        "simplify the source or use --mode binary for line art and text",
+      ],
     });
     expect(report.verdict).toBe("degraded");
   });
@@ -130,7 +142,10 @@ describe("fit report schema", () => {
 
 describe("source schemas", () => {
   it("defaults new image source fields", () => {
-    const source = imageSourceSchema.parse({ type: "image", path: "assets/source.png" });
+    const source = imageSourceSchema.parse({
+      type: "image",
+      path: "assets/source.png",
+    });
     expect(source.mode).toBe("levels");
     expect(source.normalize).toBe(true);
     expect(source.dithering).toBe(false);
@@ -151,9 +166,15 @@ describe("source schemas", () => {
   });
 
   it("rejects empty and oversized text content", () => {
-    expect(() => textSourceSchema.parse({ type: "text", content: "", font: "3x5" })).toThrow();
     expect(() =>
-      textSourceSchema.parse({ type: "text", content: "x".repeat(201), font: "3x5" }),
+      textSourceSchema.parse({ type: "text", content: "", font: "3x5" }),
+    ).toThrow();
+    expect(() =>
+      textSourceSchema.parse({
+        type: "text",
+        content: "x".repeat(201),
+        font: "3x5",
+      }),
     ).toThrow();
   });
 });
@@ -167,12 +188,12 @@ describe("new error codes", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/schemas/src/fit.test.ts`
 Expected: FAIL — `fitReportSchema` is not exported.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/schemas/src/errors.ts`, extend the `errorCodes` object (after `UNSUPPORTED_IMAGE: "GM015",`):
 
@@ -249,12 +270,12 @@ export type FitReport = z.infer<typeof fitReportSchema>;
 export type TextSource = z.infer<typeof textSourceSchema>;
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pnpm vitest run packages/schemas/src/fit.test.ts && pnpm vitest run packages/schemas`
 Expected: new file PASS, existing schema tests PASS (the new image-source fields all have defaults, so stored projects still parse).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -269,16 +290,18 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 3: Raster quantization — normalize option and binary mode
 
 **Files:**
+
 - Modify: `packages/image/src/raster.ts`
 - Test: `packages/image/src/raster-modes.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: `importRasterImage(input, calendar, options)` from `packages/image/src/raster.ts:144`
 - Produces (used by Tasks 4–7):
   - `RasterImportOptions` gains `mode?: "levels" | "binary"` (default `"levels"`) and `normalize?: boolean` (default `false` at this layer — core flips the default on in Task 7)
   - exported helper `LUMINANCE_BY_INTENSITY: readonly [255, 191, 128, 64, 0]`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/image/src/raster-modes.test.ts`:
 
@@ -295,7 +318,11 @@ import { importRasterImage } from "./raster.js";
 const calendar = () =>
   buildCalendar({ from: "2023-01-01", to: "2023-12-30" }, "UTC"); // Sun..Sat, 52 columns
 
-async function grayPng(pixels: Uint8Array, width: number, height: number): Promise<Buffer> {
+async function grayPng(
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+): Promise<Buffer> {
   return sharp(pixels, { raw: { width, height, channels: 1 } })
     .png()
     .toBuffer();
@@ -324,20 +351,29 @@ describe("levels mode (default)", () => {
     // Raw luminances 100..160 quantize to only {3, 2, 1}; normalizing maps
     // them across the full 0..255 range and separates all five intensities.
     const flat = await bandsPng([100, 110, 120, 130, 140, 150, 160]);
-    const withoutNormalize = await importRasterImage(flat, calendar(), { fit: "stretch" });
+    const withoutNormalize = await importRasterImage(flat, calendar(), {
+      fit: "stretch",
+    });
     const withNormalize = await importRasterImage(flat, calendar(), {
       fit: "stretch",
       normalize: true,
     });
-    expect(new Set(withoutNormalize.map((row) => row[10])).size).toBeLessThanOrEqual(3);
-    expect(new Set(withNormalize.map((row) => row[10])).size).toBeGreaterThanOrEqual(4);
+    expect(
+      new Set(withoutNormalize.map((row) => row[10])).size,
+    ).toBeLessThanOrEqual(3);
+    expect(
+      new Set(withNormalize.map((row) => row[10])).size,
+    ).toBeGreaterThanOrEqual(4);
   });
 });
 
 describe("binary mode", () => {
   it("produces only 0 and 4", async () => {
     const image = await bandsPng([0, 40, 90, 127, 170, 220, 255]);
-    const map = await importRasterImage(image, calendar(), { fit: "stretch", mode: "binary" });
+    const map = await importRasterImage(image, calendar(), {
+      fit: "stretch",
+      mode: "binary",
+    });
     const values = new Set(map.flat());
     expect([...values].every((value) => value === 0 || value === 4)).toBe(true);
     expect(map[0]?.[10]).toBe(4);
@@ -357,12 +393,12 @@ describe("binary mode", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/image/src/raster-modes.test.ts`
 Expected: FAIL — `mode`/`normalize` are not valid options (TypeScript error) or binary assertions fail.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/image/src/raster.ts`:
 
@@ -407,28 +443,28 @@ function quantizeBinary(luminance: number, invert: boolean): Intensity {
 3. In BOTH `quantizeRasterForDebug` and `importRasterImage`, insert normalize into the pipeline directly after `.grayscale()`:
 
 ```ts
-    if (options.normalize === true) {
-      pipeline = pipeline.normalize();
-    }
+if (options.normalize === true) {
+  pipeline = pipeline.normalize();
+}
 ```
 
 4. In both functions, pick the quantizer once before the pixel loop and use it:
 
 ```ts
-    const quantizePixel =
-      options.mode === "binary"
-        ? (luminance: number) => quantizeBinary(luminance, options.invert ?? false)
-        : (luminance: number) => quantize(luminance, options.invert ?? false);
+const quantizePixel =
+  options.mode === "binary"
+    ? (luminance: number) => quantizeBinary(luminance, options.invert ?? false)
+    : (luminance: number) => quantize(luminance, options.invert ?? false);
 ```
 
 In `importRasterImage`'s map construction, replace `return quantize(data[offset] ?? 255, options.invert ?? false);` with `return quantizePixel(data[offset] ?? 255);`. In `quantizeRasterForDebug`'s loop, replace the `quantize(...)` call the same way.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pnpm vitest run packages/image`
 Expected: new file PASS and the existing `raster.test.ts` PASS unchanged (both new options default off).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -443,14 +479,16 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 4: Raster — Floyd–Steinberg dithering
 
 **Files:**
+
 - Modify: `packages/image/src/raster.ts`
 - Test: `packages/image/src/raster-dither.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: `LUMINANCE_BY_INTENSITY`, `RasterImportOptions` from Task 3
 - Produces: `RasterImportOptions.dithering?: boolean` (default `false`; only meaningful in `"levels"` mode). The already-declared-but-dead `dithering` field in `imageSourceSchema` becomes real.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/image/src/raster-dither.test.ts`:
 
@@ -483,13 +521,17 @@ async function gradientPng(): Promise<Buffer> {
 describe("dithering", () => {
   it("keeps rows identical without dithering and varies them with dithering", async () => {
     const image = await gradientPng();
-    const plain = await importRasterImage(image, calendar(), { fit: "stretch" });
+    const plain = await importRasterImage(image, calendar(), {
+      fit: "stretch",
+    });
     const dithered = await importRasterImage(image, calendar(), {
       fit: "stretch",
       dithering: true,
     });
     expect(new Set(plain.map((row) => JSON.stringify(row))).size).toBe(1);
-    expect(new Set(dithered.map((row) => JSON.stringify(row))).size).toBeGreaterThan(1);
+    expect(
+      new Set(dithered.map((row) => JSON.stringify(row))).size,
+    ).toBeGreaterThan(1);
   });
 
   it("preserves the overall light-to-dark direction", async () => {
@@ -505,8 +547,14 @@ describe("dithering", () => {
 
   it("is deterministic", async () => {
     const image = await gradientPng();
-    const first = await importRasterImage(image, calendar(), { fit: "stretch", dithering: true });
-    const second = await importRasterImage(image, calendar(), { fit: "stretch", dithering: true });
+    const first = await importRasterImage(image, calendar(), {
+      fit: "stretch",
+      dithering: true,
+    });
+    const second = await importRasterImage(image, calendar(), {
+      fit: "stretch",
+      dithering: true,
+    });
     expect(first).toEqual(second);
   });
 });
@@ -514,12 +562,12 @@ describe("dithering", () => {
 
 Direction note: `x = 0` is luminance 0 (black) and dark pixels map to HIGH intensity, so the left columns carry higher intensities than the right — that is what the second test asserts.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/image/src/raster-dither.test.ts`
 Expected: FAIL — `dithering` not a valid option / rows identical in both cases.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/image/src/raster.ts`:
 
@@ -571,40 +619,40 @@ function ditherToIntensities(
 3. In `importRasterImage`, after the `toBuffer` call and the dimension check, branch: when `options.dithering === true && options.mode !== "binary"`, build a luminance array for the whole resized grid, dither it, and read intensities from the result instead of quantizing per pixel:
 
 ```ts
-    let ditheredIntensities: Uint8Array | undefined;
-    if (options.dithering === true && options.mode !== "binary") {
-      const luminance = new Float64Array(info.width * info.height);
-      for (let index = 0; index < luminance.length; index += 1) {
-        luminance[index] = data[index * info.channels] ?? 255;
-      }
-      ditheredIntensities = ditherToIntensities(
-        luminance,
-        info.width,
-        info.height,
-        options.invert ?? false,
-      );
-    }
+let ditheredIntensities: Uint8Array | undefined;
+if (options.dithering === true && options.mode !== "binary") {
+  const luminance = new Float64Array(info.width * info.height);
+  for (let index = 0; index < luminance.length; index += 1) {
+    luminance[index] = data[index * info.channels] ?? 255;
+  }
+  ditheredIntensities = ditherToIntensities(
+    luminance,
+    info.width,
+    info.height,
+    options.invert ?? false,
+  );
+}
 ```
 
 and in the cell callback replace the quantize call with:
 
 ```ts
-        const pixelIndex = row * info.width + column;
-        if (ditheredIntensities !== undefined) {
-          return ditheredIntensities[pixelIndex] as Intensity;
-        }
-        const offset = pixelIndex * info.channels;
-        return quantizePixel(data[offset] ?? 255);
+const pixelIndex = row * info.width + column;
+if (ditheredIntensities !== undefined) {
+  return ditheredIntensities[pixelIndex] as Intensity;
+}
+const offset = pixelIndex * info.channels;
+return quantizePixel(data[offset] ?? 255);
 ```
 
 (Note: `row * info.width + column` equals the previous indexing because `info.width === calendar.columns` until Task 5 changes placement; Task 5 updates this indexing consistently.)
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pnpm vitest run packages/image`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -617,17 +665,19 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 5: Calendar span helper + no-clip contain placement
 
 **Files:**
+
 - Modify: `packages/calendar/src/index.ts` (new exported helper)
 - Modify: `packages/image/src/raster.ts` (contain placement)
 - Test: `packages/calendar/src/span.test.ts` (new), `packages/image/src/raster-span.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: `ContributionCalendar` from `@git-mosaic/calendar`
 - Produces (used by Tasks 6 and 10):
   - `fullyInRangeColumnSpan(calendar: ContributionCalendar): { start: number; end: number }` exported from `@git-mosaic/calendar`
   - `importRasterImage` with `fit: "contain"` places art only inside that span, so no in-range artwork pixel is ever zeroed by partial first/last weeks. `cover`/`stretch` keep full-grid behavior (they crop or distort by contract).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `packages/calendar/src/span.test.ts`:
 
@@ -638,14 +688,23 @@ import { buildCalendar, fullyInRangeColumnSpan } from "./index.js";
 
 describe("fullyInRangeColumnSpan", () => {
   it("skips partial first and last weeks (2025 starts Wednesday, ends Wednesday)", () => {
-    const calendar = buildCalendar({ from: "2025-01-01", to: "2025-12-31" }, "UTC");
+    const calendar = buildCalendar(
+      { from: "2025-01-01", to: "2025-12-31" },
+      "UTC",
+    );
     expect(calendar.columns).toBe(53);
     expect(fullyInRangeColumnSpan(calendar)).toEqual({ start: 1, end: 51 });
   });
 
   it("uses the whole grid when the range is Sunday-aligned", () => {
-    const calendar = buildCalendar({ from: "2023-01-01", to: "2023-12-30" }, "UTC");
-    expect(fullyInRangeColumnSpan(calendar)).toEqual({ start: 0, end: calendar.columns - 1 });
+    const calendar = buildCalendar(
+      { from: "2023-01-01", to: "2023-12-30" },
+      "UTC",
+    );
+    expect(fullyInRangeColumnSpan(calendar)).toEqual({
+      start: 0,
+      end: calendar.columns - 1,
+    });
   });
 });
 ```
@@ -663,15 +722,22 @@ import { importRasterImage } from "./raster.js";
 async function blackPng(): Promise<Buffer> {
   const width = 510;
   const height = 70;
-  return sharp(new Uint8Array(width * height), { raw: { width, height, channels: 1 } })
+  return sharp(new Uint8Array(width * height), {
+    raw: { width, height, channels: 1 },
+  })
     .png()
     .toBuffer();
 }
 
 describe("contain placement inside the fully in-range span", () => {
   it("never paints partial edge columns", async () => {
-    const calendar = buildCalendar({ from: "2025-01-01", to: "2025-12-31" }, "UTC");
-    const map = await importRasterImage(await blackPng(), calendar, { fit: "contain" });
+    const calendar = buildCalendar(
+      { from: "2025-01-01", to: "2025-12-31" },
+      "UTC",
+    );
+    const map = await importRasterImage(await blackPng(), calendar, {
+      fit: "contain",
+    });
     // Column 0 has in-range cells (Wed..Sat) but is a partial week: must stay 0.
     expect(map.map((row) => row[0])).toEqual([0, 0, 0, 0, 0, 0, 0]);
     expect(map.map((row) => row[52])).toEqual([0, 0, 0, 0, 0, 0, 0]);
@@ -681,20 +747,25 @@ describe("contain placement inside the fully in-range span", () => {
   });
 
   it("keeps cover mode on the full grid", async () => {
-    const calendar = buildCalendar({ from: "2025-01-01", to: "2025-12-31" }, "UTC");
-    const map = await importRasterImage(await blackPng(), calendar, { fit: "cover" });
+    const calendar = buildCalendar(
+      { from: "2025-01-01", to: "2025-12-31" },
+      "UTC",
+    );
+    const map = await importRasterImage(await blackPng(), calendar, {
+      fit: "cover",
+    });
     // Cover still paints in-range cells of the partial first column.
     expect(map[3]?.[0]).toBe(4);
   });
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm vitest run packages/calendar/src/span.test.ts packages/image/src/raster-span.test.ts`
 Expected: FAIL — `fullyInRangeColumnSpan` not exported; contain currently paints `map[3][0]`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/calendar/src/index.ts`, add after `buildCalendar`:
 
@@ -733,32 +804,32 @@ In `packages/image/src/raster.ts`:
 2. In `importRasterImage`, compute the target box before building the pipeline:
 
 ```ts
-    const span =
-      (options.fit ?? "contain") === "contain"
-        ? fullyInRangeColumnSpan(calendar)
-        : { start: 0, end: calendar.columns - 1 };
-    const targetColumns = span.end - span.start + 1;
+const span =
+  (options.fit ?? "contain") === "contain"
+    ? fullyInRangeColumnSpan(calendar)
+    : { start: 0, end: calendar.columns - 1 };
+const targetColumns = span.end - span.start + 1;
 ```
 
 3. Resize to `targetColumns` instead of `calendar.columns` (`.resize(targetColumns, 7, { ... })`) and update the dimension check to `info.width !== targetColumns`.
 4. In the cell callback, translate grid column to image column:
 
 ```ts
-        const cell = calendar.cells[row]?.[column];
-        if (cell?.inRange !== true) return 0;
-        const localColumn = column - span.start;
-        if (localColumn < 0 || localColumn >= info.width) return 0;
-        const pixelIndex = row * info.width + localColumn;
+const cell = calendar.cells[row]?.[column];
+if (cell?.inRange !== true) return 0;
+const localColumn = column - span.start;
+if (localColumn < 0 || localColumn >= info.width) return 0;
+const pixelIndex = row * info.width + localColumn;
 ```
 
 (The dithering branch from Task 4 already indexes with `pixelIndex`; it stays correct.)
 
-- [ ] **Step 4: Run tests — including possible existing-expectation updates**
+- [x] **Step 4: Run tests — including possible existing-expectation updates**
 
 Run: `pnpm vitest run packages/image packages/calendar`
 Expected: new tests PASS. If any pre-existing case in `packages/image/src/raster.test.ts` asserts contain-fit values in partial edge columns, update that expectation to the new rule ("contain never paints partial columns") — the new rule is the specified behavior, and note the change in the commit body.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -773,22 +844,25 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 6: Image expressibility analyzer
 
 **Files:**
+
 - Create: `packages/image/src/expressibility.ts`
 - Modify: `packages/image/src/index.ts` (re-export)
 - Test: `packages/image/src/expressibility.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: `importRasterImage`, `LUMINANCE_BY_INTENSITY`, `RasterImportOptions` (Task 3–5), `fullyInRangeColumnSpan` (Task 5), `fitReportSchema`/`FitReport` (Task 2), `sharp`
 - Produces (used by Task 7):
   - `analyzeExpressibility(input: RasterInput, calendar: ContributionCalendar, options?: RasterImportOptions): Promise<FitReport>`
 
 **Design (fixed constants):**
+
 - `aspectEfficiency`: ratio of image aspect to canvas aspect, `min/max` so it is `<= 1`; forced to `1` for `cover`/`stretch` (they fill the canvas by cropping/distorting).
 - `edgeSurvival`: per-cell pooled gradient energy comparison. Downscale-import the image (the real pipeline), upscale each cell back to a 4×4 block using `LUMINANCE_BY_INTENSITY`, render the original to the same reference size, then compare per-cell pooled gradient sums with `sum(min(orig, round)) / sum(orig)`. Pooling per cell makes the metric insensitive to sub-cell misalignment.
 - `toneSeparability`: Shannon entropy of the in-range intensity histogram normalized by `log2(5)`.
 - `score = edgeSurvival * sqrt(aspectEfficiency)`; verdict `good >= 0.6`, `degraded >= 0.35`, else `bad`. Tone separability contributes remedies, not score.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/image/src/expressibility.test.ts`:
 
@@ -803,7 +877,11 @@ import { analyzeExpressibility } from "./expressibility.js";
 const calendar = () =>
   buildCalendar({ from: "2023-01-01", to: "2023-12-30" }, "UTC");
 
-async function grayPng(pixels: Uint8Array, width: number, height: number): Promise<Buffer> {
+async function grayPng(
+  pixels: Uint8Array,
+  width: number,
+  height: number,
+): Promise<Buffer> {
   return sharp(pixels, { raw: { width, height, channels: 1 } })
     .png()
     .toBuffer();
@@ -846,7 +924,10 @@ async function portraitPng(): Promise<Buffer> {
 
 describe("analyzeExpressibility", () => {
   it("scores a bold wide silhouette as good", async () => {
-    const report = await analyzeExpressibility(await silhouettePng(), calendar());
+    const report = await analyzeExpressibility(
+      await silhouettePng(),
+      calendar(),
+    );
     expect(report.verdict).toBe("good");
     expect(report.signals.edgeSurvival).toBeGreaterThan(0.6);
   });
@@ -872,12 +953,12 @@ describe("analyzeExpressibility", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/image/src/expressibility.test.ts`
 Expected: FAIL — module does not exist.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `packages/image/src/expressibility.ts`:
 
@@ -968,7 +1049,8 @@ export async function analyzeExpressibility(
   const canvasAspect = columns / 7;
   const aspectEfficiency =
     fit === "contain"
-      ? Math.min(imageAspect, canvasAspect) / Math.max(imageAspect, canvasAspect)
+      ? Math.min(imageAspect, canvasAspect) /
+        Math.max(imageAspect, canvasAspect)
       : 1;
 
   const refWidth = columns * CELL_PIXELS;
@@ -1016,7 +1098,8 @@ export async function analyzeExpressibility(
     originalTotal += originalEnergy[index]!;
     sharedTotal += Math.min(originalEnergy[index]!, roundtripEnergy[index]!);
   }
-  const edgeSurvival = originalTotal === 0 ? 1 : Math.min(1, sharedTotal / originalTotal);
+  const edgeSurvival =
+    originalTotal === 0 ? 1 : Math.min(1, sharedTotal / originalTotal);
 
   const histogram = [0, 0, 0, 0, 0];
   for (const [row, cells] of map.entries()) {
@@ -1029,7 +1112,12 @@ export async function analyzeExpressibility(
   const toneSeparability = entropyOfIntensities(histogram);
 
   const score = edgeSurvival * Math.sqrt(aspectEfficiency);
-  const verdict = score >= GOOD_THRESHOLD ? "good" : score >= DEGRADED_THRESHOLD ? "degraded" : "bad";
+  const verdict =
+    score >= GOOD_THRESHOLD
+      ? "good"
+      : score >= DEGRADED_THRESHOLD
+        ? "degraded"
+        : "bad";
 
   const survives: string[] = [];
   const lost: string[] = [];
@@ -1038,17 +1126,23 @@ export async function analyzeExpressibility(
     survives.push("large shapes and strong edges");
   } else {
     lost.push("fine detail smaller than one week/day cell");
-    remedies.push("simplify the source or use --mode binary for line art and text");
+    remedies.push(
+      "simplify the source or use --mode binary for line art and text",
+    );
   }
   if (aspectEfficiency < 0.5) {
-    lost.push("most of the canvas: the image aspect ratio leaves large empty areas");
+    lost.push(
+      "most of the canvas: the image aspect ratio leaves large empty areas",
+    );
     remedies.push(
       `crop the source to a wide region (canvas is about ${(columns / 7).toFixed(1)}:1) or use --fit cover`,
     );
   }
   if (toneSeparability < 0.3 && options.mode !== "binary") {
     lost.push("tonal variation: most cells share one shade");
-    remedies.push("increase contrast with --contrast or enable --dithering for smooth gradients");
+    remedies.push(
+      "increase contrast with --contrast or enable --dithering for smooth gradients",
+    );
   } else if (options.mode !== "binary" && toneSeparability >= 0.3) {
     survives.push("tonal structure across the five shades");
   }
@@ -1070,12 +1164,12 @@ In `packages/image/src/index.ts`, add:
 export * from "./expressibility.js";
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pnpm vitest run packages/image`
 Expected: PASS. If a verdict assertion fails, print the report in the failing test (`console.log(report)`) and check which signal is off; adjust the FIXTURE (e.g., stronger noise, bigger rectangle) if the fixture is weaker than its name claims. Only change thresholds if a fixture is unambiguous and still misclassified, and record the new threshold in this file's Design block and the commit message.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -1090,12 +1184,14 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 7: Core image import — fit report and force gate
 
 **Files:**
+
 - Modify: `packages/core/src/project.ts` (`importImage` at :213, `importImageBuffer` at :249)
 - Modify: `apps/cli/src/program.ts:212-224` (minimal call-site fix; full UX in Task 13)
 - Modify: `apps/web/src/server.ts:426-443` (minimal call-site fix; full UX in Task 14)
 - Test: `packages/core/src/import-image-report.test.ts` (new); update existing `packages/core/src/project.test.ts` expectations if they destructure the old return type
 
 **Interfaces:**
+
 - Consumes: `analyzeExpressibility` (Task 6), `FitReport` (Task 2)
 - Produces (used by Tasks 13–14):
   - `export interface ImageImportOptions extends RasterImportOptions { force?: boolean }`
@@ -1105,7 +1201,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   - Core defaults `normalize` to `true` when the caller does not set it.
   - `report.verdict === "bad"` without `force: true` throws `GitMosaicError("LOW_EXPRESSIBILITY", ...)` BEFORE any file is written.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/core/src/import-image-report.test.ts`:
 
@@ -1137,7 +1233,9 @@ async function silhouettePng(): Promise<Buffer> {
   for (let y = 10; y < 60; y += 1) {
     pixels.fill(0, y * width + 100, y * width + 420);
   }
-  return sharp(pixels, { raw: { width, height, channels: 1 } }).png().toBuffer();
+  return sharp(pixels, { raw: { width, height, channels: 1 } })
+    .png()
+    .toBuffer();
 }
 
 async function noisePng(): Promise<Buffer> {
@@ -1149,7 +1247,9 @@ async function noisePng(): Promise<Buffer> {
     state = (state * 1103515245 + 12345) % 2147483648;
     pixels[index] = state % 2 === 0 ? 0 : 255;
   }
-  return sharp(pixels, { raw: { width, height, channels: 1 } }).png().toBuffer();
+  return sharp(pixels, { raw: { width, height, channels: 1 } })
+    .png()
+    .toBuffer();
 }
 
 describe("importImageBuffer fit gate", () => {
@@ -1181,20 +1281,25 @@ describe("importImageBuffer fit gate", () => {
 
   it("imports bad art with force: true", async () => {
     const directory = await projectDirectory();
-    const { report } = await importImageBuffer(directory, "noise.png", await noisePng(), {
-      force: true,
-    });
+    const { report } = await importImageBuffer(
+      directory,
+      "noise.png",
+      await noisePng(),
+      {
+        force: true,
+      },
+    );
     expect(report.verdict).toBe("bad");
   });
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/core/src/import-image-report.test.ts`
 Expected: FAIL — return value has no `report`; no gate.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/core/src/project.ts`:
 
@@ -1212,7 +1317,9 @@ export interface ImageImportResult {
   report: FitReport;
 }
 
-function withCoreImageDefaults(options: ImageImportOptions): RasterImportOptions {
+function withCoreImageDefaults(
+  options: ImageImportOptions,
+): RasterImportOptions {
   const { force: _force, ...raster } = options;
   return { normalize: true, ...raster };
 }
@@ -1252,7 +1359,8 @@ function assertExpressible(report: FitReport, force: boolean): void {
     },
 ```
 
-   - return `{ project: updated, report }` with return type `Promise<ImageImportResult>`.
+- return `{ project: updated, report }` with return type `Promise<ImageImportResult>`.
+
 4. Apply the same transformation to `importImageBuffer` (project.ts:249) — analyze from `buffer`, gate before `writeFile`, persist real option values, return `{ project: updated, report }`.
 
 Minimal call-site fixes so the workspace still compiles (full UX comes later):
@@ -1260,12 +1368,12 @@ Minimal call-site fixes so the workspace still compiles (full UX comes later):
 - `apps/cli/src/program.ts` `import image` action (line ~212): change `const project = await importImage(...)` to `const { project } = await importImage(...)`.
 - `apps/web/src/server.ts` `/api/image/import` (line ~435): change `const project = await importImageBuffer(...)` to `const { project, report } = await importImageBuffer(...)` and respond `sendJson(response, 200, { project, report });`.
 
-- [ ] **Step 4: Run tests and typecheck**
+- [x] **Step 4: Run tests and typecheck**
 
 Run: `pnpm vitest run packages/core apps && pnpm typecheck`
 Expected: new test PASS. Update any existing expectation in `packages/core/src/project.test.ts` and `apps/web/src/server.test.ts` that used the old `importImage`/`importImageBuffer` return shape: destructure `{ project }` and, where a test imports an image fixture that now scores `bad`, pass `{ force: true }`. Do not weaken assertions otherwise.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -1278,12 +1386,14 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 8: `@git-mosaic/text` package — pixel fonts
 
 **Files:**
+
 - Create: `packages/text/package.json`, `packages/text/tsconfig.json`, `packages/text/tsconfig.build.json` (copy the two tsconfig files from `packages/calendar/` verbatim)
 - Create: `packages/text/src/index.ts`, `packages/text/src/fonts.ts`
 - Modify: `vitest.config.ts` (alias for `@git-mosaic/text`)
 - Test: `packages/text/src/fonts.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: `@git-mosaic/schemas` (`FontTier`)
 - Produces (used by Tasks 9–10):
   - `interface PixelFont { tier: FontTier; height: number; startRow: number; glyphs: Record<string, readonly string[]> }`
@@ -1292,7 +1402,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   - Glyph encoding: array of strings, one per row, `#` = on, `.` = off; all rows of one glyph share one width; widths vary per glyph.
   - `startRow` is where the glyph block sits vertically on the 7-row canvas (0 for 7-row font, 1 for 5-row fonts, leaving Sunday and Saturday rows blank).
 
-- [ ] **Step 1: Scaffold the package**
+- [x] **Step 1: Scaffold the package**
 
 `packages/text/package.json`:
 
@@ -1354,7 +1464,7 @@ export * from "./fonts.js";
 
 Run: `pnpm install` (links the new workspace package).
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `packages/text/src/fonts.test.ts`:
 
@@ -1375,7 +1485,10 @@ describe("pixel fonts", () => {
   it("covers the full charset in every tier", () => {
     for (const font of FONTS) {
       for (const char of EXPECTED_CHARS) {
-        expect(font.glyphs[char], `${font.tier} missing '${char}'`).toBeDefined();
+        expect(
+          font.glyphs[char],
+          `${font.tier} missing '${char}'`,
+        ).toBeDefined();
       }
     }
     expect(CHARSET).toEqual(new Set(EXPECTED_CHARS));
@@ -1389,7 +1502,9 @@ describe("pixel fonts", () => {
         expect(width, `${font.tier} '${char}' width`).toBeGreaterThan(0);
         for (const row of rows) {
           expect(row.length, `${font.tier} '${char}' ragged rows`).toBe(width);
-          expect(/^[#.]*$/.test(row), `${font.tier} '${char}' bad chars`).toBe(true);
+          expect(/^[#.]*$/.test(row), `${font.tier} '${char}' bad chars`).toBe(
+            true,
+          );
         }
       }
     }
@@ -1414,19 +1529,22 @@ describe("pixel fonts", () => {
     for (const font of FONTS) {
       for (const [char, rows] of Object.entries(font.glyphs)) {
         if (char === " ") continue;
-        expect(rows.join("").includes("#"), `${font.tier} '${char}' empty`).toBe(true);
+        expect(
+          rows.join("").includes("#"),
+          `${font.tier} '${char}' empty`,
+        ).toBe(true);
       }
     }
   });
 });
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/text/src/fonts.test.ts`
 Expected: FAIL — `./fonts.js` does not exist.
 
-- [ ] **Step 4: Implement the fonts**
+- [x] **Step 4: Implement the fonts**
 
 Create `packages/text/src/fonts.ts` with exactly this content (glyphs are hand-designed; the aesthetics may be tuned later, but every structural test above must hold):
 
@@ -1601,7 +1719,7 @@ export const CHARSET: ReadonlySet<string> = new Set(
 );
 ```
 
-- [ ] **Step 5: Run tests and eyeball the glyphs**
+- [x] **Step 5: Run tests and eyeball the glyphs**
 
 Run: `pnpm vitest run packages/text`
 Expected: PASS.
@@ -1632,7 +1750,7 @@ for (const font of FONTS) {
 
 Read the output: every letter and digit must be recognizable at a glance. Fix any glyph that is not (edit `fonts.ts`, rebuild, re-render, re-run the structural tests) before committing.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 pnpm format
@@ -1647,11 +1765,13 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 9: Text measurement and the font-size ladder
 
 **Files:**
+
 - Create: `packages/text/src/layout.ts`
 - Modify: `packages/text/src/index.ts` (re-export)
 - Test: `packages/text/src/layout.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: `FONTS`, `CHARSET`, `PixelFont` (Task 8); `GitMosaicError` from `@git-mosaic/schemas`
 - Produces (used by Task 10):
   - `measureText(content: string, font: PixelFont): number` — total columns: glyph widths + 1 blank column between glyphs
@@ -1659,7 +1779,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   - `layoutText(content: string, availableColumns: number): TextLayout` — walks the ladder largest-first, returns the largest tier that fits; throws `GitMosaicError("UNSUPPORTED_TEXT")` for characters outside the charset and `GitMosaicError("TEXT_DOES_NOT_FIT")` with exact numbers when even `3x5` overflows
   - Content is uppercased before lookup (`content.toUpperCase()`); empty/whitespace-only content throws `UNSUPPORTED_TEXT`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/text/src/layout.test.ts`:
 
@@ -1740,12 +1860,12 @@ describe("layoutText ladder", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/text/src/layout.test.ts`
 Expected: FAIL — `./layout.js` does not exist.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `packages/text/src/layout.ts`:
 
@@ -1812,7 +1932,10 @@ function renderCells(content: string, font: PixelFont): boolean[][] {
  * distinct characters — so beyond the smallest tier this refuses with exact
  * numbers instead of producing an illegible smear.
  */
-export function layoutText(content: string, availableColumns: number): TextLayout {
+export function layoutText(
+  content: string,
+  availableColumns: number,
+): TextLayout {
   const normalized = normalizeContent(content);
   for (const font of FONTS) {
     const width = measureText(normalized, font);
@@ -1846,12 +1969,12 @@ export * from "./fonts.js";
 export * from "./layout.js";
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pnpm vitest run packages/text`
 Expected: PASS. The ladder expectations depend on the exact glyph widths in Task 8 (the per-case comments show the arithmetic); if one fails, recompute the width by hand with `measureText` semantics before touching anything — the fix is choosing a test string that genuinely lands in that tier, not bending `measureText`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -1866,11 +1989,13 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 10: Stamp text onto the calendar with a fit report
 
 **Files:**
+
 - Create: `packages/text/src/stamp.ts`
 - Modify: `packages/text/src/index.ts` (re-export)
 - Test: `packages/text/src/stamp.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: `layoutText` (Task 9), `fullyInRangeColumnSpan` (Task 5), `fitReportSchema` (Task 2), `validateIntensityMap` from `@git-mosaic/calendar`
 - Produces (used by Task 11):
   - `type TextAlign = "left" | "center" | "right"`
@@ -1878,7 +2003,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   - On-pixels become intensity `4`, everything else `0`; text never touches partial edge columns.
   - Report: `5x7` → verdict `good`, score `1`; `4x5` → `good`, `0.85`; `3x5` → `degraded`, `0.6` with the remedy `"shorten the text to use a larger font tier"`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/text/src/stamp.test.ts`:
 
@@ -1927,7 +2052,10 @@ describe("stampTextOnCalendar", () => {
   it("degrades the verdict at the 3x5 floor", () => {
     // "LOADING... OK" at 4x5 needs 52 columns; the 2025 span has 51 — a
     // deliberate one-column boundary that forces the 3x5 floor.
-    const { report, tier } = stampTextOnCalendar("LOADING... OK", calendar2025());
+    const { report, tier } = stampTextOnCalendar(
+      "LOADING... OK",
+      calendar2025(),
+    );
     expect(tier).toBe("3x5");
     expect(report.verdict).toBe("degraded");
     expect(report.remedies.join(" ")).toContain("shorten");
@@ -1943,12 +2071,12 @@ describe("stampTextOnCalendar", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/text/src/stamp.test.ts`
 Expected: FAIL — `./stamp.js` does not exist.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Create `packages/text/src/stamp.ts`:
 
@@ -1975,7 +2103,10 @@ export interface StampResult {
   tier: FontTier;
 }
 
-const TIER_QUALITY: Record<FontTier, { verdict: "good" | "degraded"; score: number }> = {
+const TIER_QUALITY: Record<
+  FontTier,
+  { verdict: "good" | "degraded"; score: number }
+> = {
   "5x7": { verdict: "good", score: 1 },
   "4x5": { verdict: "good", score: 0.85 },
   "3x5": { verdict: "degraded", score: 0.6 },
@@ -2029,8 +2160,14 @@ export function stampTextOnCalendar(
       columnsAvailable: available,
     },
     survives: [`every character at the ${layout.tier} pixel font`],
-    lost: quality.verdict === "degraded" ? ["stroke detail: 3x5 is the legibility floor"] : [],
-    remedies: quality.verdict === "degraded" ? ["shorten the text to use a larger font tier"] : [],
+    lost:
+      quality.verdict === "degraded"
+        ? ["stroke detail: 3x5 is the legibility floor"]
+        : [],
+    remedies:
+      quality.verdict === "degraded"
+        ? ["shorten the text to use a larger font tier"]
+        : [],
   });
 
   return { map, report, tier: layout.tier };
@@ -2045,12 +2182,12 @@ export * from "./layout.js";
 export * from "./stamp.js";
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pnpm vitest run packages/text`
 Expected: PASS. The centered-start assertion (`22`) is derived, not guessed: span 1..51 → 51 columns; "HI" at 5x7 = 5 + 1 + 3 = 9; `1 + floor((51 - 9) / 2) = 22`. If it fails, check `fullyInRangeColumnSpan` for 2025 first (Task 5 asserts `{start: 1, end: 51}`).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -2063,16 +2200,18 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 11: Core `importText`
 
 **Files:**
+
 - Modify: `packages/core/src/project.ts`, `packages/core/package.json` (add `"@git-mosaic/text": "workspace:*"` to dependencies)
 - Test: `packages/core/src/import-text.test.ts` (new)
 
 **Interfaces:**
+
 - Consumes: `stampTextOnCalendar`, `TextAlign` (Task 10), `textSourceSchema` (Task 2), existing `readProject`/`writeProject`/`buildCalendar`
 - Produces (used by Tasks 13–14):
   - `importText(projectDirectory: string, content: string, options?: { align?: TextAlign }, now?: string): Promise<{ project: MosaicProject; report: FitReport }>`
   - Persists `source: { type: "text", content, font: <chosen tier>, align }` and the stamped `intensityMap`. No asset file is written.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/core/src/import-text.test.ts`:
 
@@ -2129,12 +2268,12 @@ describe("importText", () => {
 
 ("Loading..." at 5x7: letters 5+5+5+5+3+5+5 = 33, dots 3×2 = 6, gaps 9 → 48 ≤ 51 span columns → tier `5x7`.)
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/core/src/import-text.test.ts`
 Expected: FAIL — `importText` is not exported.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Add `"@git-mosaic/text": "workspace:*"` to `packages/core/package.json` dependencies and run `pnpm install`.
 
@@ -2166,12 +2305,12 @@ export async function importText(
 }
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pnpm vitest run packages/core && pnpm typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -2186,6 +2325,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 12: WYSIWYG preview by default, quartile estimate opt-in
 
 **Files:**
+
 - Modify: `packages/calendar/src/levels.ts` (new strategy)
 - Modify: `packages/core/src/preview.ts:12` (default strategy)
 - Modify: `packages/core/src/render.ts` (mode parameter)
@@ -2193,6 +2333,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Test: `packages/calendar/src/levels-artistic.test.ts` (new); update `packages/core/src/preview.test.ts` expectations
 
 **Interfaces:**
+
 - Consumes: `ContributionLevelStrategy`, `CalendarCell` from `packages/calendar/src/levels.ts` / `index.ts`
 - Produces:
   - `ArtisticIntensityStrategy` exported from `@git-mosaic/calendar`: level = drawn intensity, one-to-one (`0→NONE, 1→FIRST_QUARTILE, … 4→FOURTH_QUARTILE`), ignoring counts
@@ -2201,7 +2342,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   - `gm preview --estimate` switches to the quartile simulation
   - Snapshot semantics unchanged: OBSERVED days keep GitHub's own level (the existing override in `buildPreviewCalendar` runs after the strategy in both modes).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `packages/calendar/src/levels-artistic.test.ts`:
 
@@ -2257,12 +2398,12 @@ describe("ArtisticIntensityStrategy", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm vitest run packages/calendar/src/levels-artistic.test.ts`
 Expected: FAIL — `ArtisticIntensityStrategy` not exported.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `packages/calendar/src/levels.ts`, add:
 
@@ -2323,8 +2464,10 @@ export async function renderProjectTerminal(
   mode: PreviewMode = "artistic",
 ): Promise<string> {
   const project = await readProject(projectDirectory);
-  return renderTerminal(buildPreviewCalendar(project, strategyFor(mode)), options)
-    .content;
+  return renderTerminal(
+    buildPreviewCalendar(project, strategyFor(mode)),
+    options,
+  ).content;
 }
 
 export async function renderProjectSvg(
@@ -2339,15 +2482,16 @@ export async function renderProjectSvg(
 
 In `apps/cli/src/program.ts` preview command: add `.option("--estimate", "rank levels like GitHub's quartile estimate instead of showing drawn intensities")`, add `estimate?: boolean` to the action's options type, and pass `options.estimate === true ? "estimate" : "artistic"` as the third argument to both `renderProjectSvg` and `renderProjectTerminal` calls.
 
-- [ ] **Step 4: Run tests and update existing expectations**
+- [x] **Step 4: Run tests and update existing expectations**
 
 Run: `pnpm vitest run packages/calendar packages/core apps/cli`
 Expected: the new test PASSES. Tests that asserted quartile levels through the DEFAULT preview path will fail — for each failing case in `packages/core/src/preview.test.ts` (and any CLI preview snapshot in `apps/cli/src/program.test.ts`):
+
 - if the case is ABOUT quartile ranking, keep it by passing `new QuartileApproximationStrategy()` explicitly to `buildPreviewCalendar` (import it in the test);
 - if the case is about snapshot/OBSERVED/MIXED semantics, update the expected levels to the artistic mapping (level = drawn intensity; OBSERVED days keep the observed level).
-Then add one new case to `packages/core/src/preview.test.ts` asserting the default is artistic: a project whose `intensityMap` contains one cell each of intensities 1–4 must produce levels `FIRST..FOURTH_QUARTILE` respectively regardless of `commitLevelMap` values.
+  Then add one new case to `packages/core/src/preview.test.ts` asserting the default is artistic: a project whose `intensityMap` contains one cell each of intensities 1–4 must produce levels `FIRST..FOURTH_QUARTILE` respectively regardless of `commitLevelMap` values.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 pnpm format
@@ -2362,17 +2506,19 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 13: CLI — `gm import text`, fit-report output, force flag
 
 **Files:**
+
 - Modify: `apps/cli/src/program.ts` (import image action ~:190-225; new `import text` subcommand; shared report formatter)
 - Test: extend `apps/cli/src/program.test.ts`
 
 **Interfaces:**
+
 - Consumes: `importText`, `ImageImportOptions` (Tasks 7, 11), `renderProjectTerminal` (Task 12), `FitReport` (Task 2)
 - Produces: user-facing CLI behavior:
   - `gm import image <input> --project <path> [--fit contain|cover|stretch] [--mode levels|binary] [--invert] [--contrast <n>] [--no-normalize] [--dither] [--force]`
   - `gm import text <content> --project <path> [--align left|center|right]`
   - Both print the fit report and then the terminal preview so the user immediately sees what they got.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `apps/cli/src/program.test.ts` (it already imports `mkdtemp`, `readFile`, `writeFile`, `tmpdir`, `path`, `vi`, and pushes temp dirs onto `temporaryDirectories`; add `import sharp from "sharp"` at the top and `"sharp": "^0.34.1"` to `apps/cli/package.json` devDependencies, then `pnpm install`).
 
@@ -2408,7 +2554,9 @@ async function writeNoisePng(filePath: string): Promise<string> {
     state = (state * 1103515245 + 12345) % 2147483648;
     pixels[index] = state % 2 === 0 ? 0 : 255;
   }
-  await sharp(pixels, { raw: { width, height, channels: 1 } }).png().toFile(filePath);
+  await sharp(pixels, { raw: { width, height, channels: 1 } })
+    .png()
+    .toFile(filePath);
   return filePath;
 }
 
@@ -2469,7 +2617,9 @@ describe("import text", () => {
 describe("import image fit gate", () => {
   it("rejects low-expressibility images and accepts them with --force", async () => {
     const target = await cliProject("2025");
-    const noisePath = await writeNoisePng(path.join(path.dirname(target), "noise.png"));
+    const noisePath = await writeNoisePng(
+      path.join(path.dirname(target), "noise.png"),
+    );
 
     await expect(
       createProgram().parseAsync([
@@ -2504,12 +2654,12 @@ describe("import image fit gate", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm vitest run apps/cli`
 Expected: FAIL — unknown command `text`, unknown options.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `apps/cli/src/program.ts`:
 
@@ -2521,9 +2671,11 @@ function formatFitReport(report: FitReport): string {
   const lines = [
     `Fit: ${report.verdict.toUpperCase()} (score ${report.score.toFixed(2)})`,
   ];
-  if (report.survives.length > 0) lines.push(`Survives: ${report.survives.join("; ")}`);
+  if (report.survives.length > 0)
+    lines.push(`Survives: ${report.survives.join("; ")}`);
   if (report.lost.length > 0) lines.push(`Lost: ${report.lost.join("; ")}`);
-  if (report.remedies.length > 0) lines.push(`Try: ${report.remedies.join("; ")}`);
+  if (report.remedies.length > 0)
+    lines.push(`Try: ${report.remedies.join("; ")}`);
   return `${lines.join("\n")}\n`;
 }
 ```
@@ -2533,60 +2685,69 @@ function formatFitReport(report: FitReport): string {
 3. Rework the `import image` action:
 
 ```ts
-  importCommand
-    .command("image")
-    .description("import a PNG, JPEG, or WebP image")
-    .argument("<input>", "image file")
-    .requiredOption("--project <path>", "mosaic project directory")
-    .addOption(
-      new Option("--fit <mode>", "image fitting mode")
-        .choices(["contain", "cover", "stretch"])
-        .default("contain"),
-    )
-    .addOption(
-      new Option("--mode <mode>", "quantization mode")
-        .choices(["levels", "binary"])
-        .default("levels"),
-    )
-    .option("--invert", "invert intensity levels")
-    .option("--contrast <multiplier>", "contrast multiplier", Number)
-    .option("--no-normalize", "keep the original histogram instead of stretching it")
-    .option("--dither", "diffuse quantization error for smooth gradients")
-    .option("--force", "import even when the fit verdict is bad")
-    .action(
-      async (
-        input: string,
-        options: {
-          project: string;
-          fit: "contain" | "cover" | "stretch";
-          mode: "levels" | "binary";
-          invert?: boolean;
-          contrast?: number;
-          normalize: boolean;
-          dither?: boolean;
-          force?: boolean;
-        },
-      ) => {
-        const projectDirectory = path.resolve(options.project);
-        const { project, report } = await importImage(projectDirectory, path.resolve(input), {
+importCommand
+  .command("image")
+  .description("import a PNG, JPEG, or WebP image")
+  .argument("<input>", "image file")
+  .requiredOption("--project <path>", "mosaic project directory")
+  .addOption(
+    new Option("--fit <mode>", "image fitting mode")
+      .choices(["contain", "cover", "stretch"])
+      .default("contain"),
+  )
+  .addOption(
+    new Option("--mode <mode>", "quantization mode")
+      .choices(["levels", "binary"])
+      .default("levels"),
+  )
+  .option("--invert", "invert intensity levels")
+  .option("--contrast <multiplier>", "contrast multiplier", Number)
+  .option(
+    "--no-normalize",
+    "keep the original histogram instead of stretching it",
+  )
+  .option("--dither", "diffuse quantization error for smooth gradients")
+  .option("--force", "import even when the fit verdict is bad")
+  .action(
+    async (
+      input: string,
+      options: {
+        project: string;
+        fit: "contain" | "cover" | "stretch";
+        mode: "levels" | "binary";
+        invert?: boolean;
+        contrast?: number;
+        normalize: boolean;
+        dither?: boolean;
+        force?: boolean;
+      },
+    ) => {
+      const projectDirectory = path.resolve(options.project);
+      const { project, report } = await importImage(
+        projectDirectory,
+        path.resolve(input),
+        {
           fit: options.fit,
           mode: options.mode,
           invert: options.invert ?? false,
           normalize: options.normalize,
           dithering: options.dither ?? false,
           force: options.force ?? false,
-          ...(options.contrast === undefined ? {} : { contrast: options.contrast }),
-        });
-        writeOutput(program, `Imported image into ${project.name}\n`);
-        writeOutput(program, formatFitReport(report));
-        writeOutput(
-          program,
-          await renderProjectTerminal(projectDirectory, {
-            color: process.stdout.isTTY === true,
-          }),
-        );
-      },
-    );
+          ...(options.contrast === undefined
+            ? {}
+            : { contrast: options.contrast }),
+        },
+      );
+      writeOutput(program, `Imported image into ${project.name}\n`);
+      writeOutput(program, formatFitReport(report));
+      writeOutput(
+        program,
+        await renderProjectTerminal(projectDirectory, {
+          color: process.stdout.isTTY === true,
+        }),
+      );
+    },
+  );
 ```
 
 (commander turns `--no-normalize` into `normalize: boolean` defaulting to `true` — exactly the core default.)
@@ -2594,45 +2755,45 @@ function formatFitReport(report: FitReport): string {
 4. Add the text subcommand after `import image`:
 
 ```ts
-  importCommand
-    .command("text")
-    .description("render text onto the calendar with a built-in pixel font")
-    .argument("<content>", "text to render (A-Z, 0-9, space, . ! ? - :)")
-    .requiredOption("--project <path>", "mosaic project directory")
-    .addOption(
-      new Option("--align <align>", "horizontal alignment")
-        .choices(["left", "center", "right"])
-        .default("center"),
-    )
-    .action(
-      async (
-        content: string,
-        options: { project: string; align: "left" | "center" | "right" },
-      ) => {
-        const projectDirectory = path.resolve(options.project);
-        const { project, report } = await importText(projectDirectory, content, {
-          align: options.align,
-        });
-        writeOutput(program, `Imported text into ${project.name}\n`);
-        writeOutput(program, formatFitReport(report));
-        writeOutput(
-          program,
-          await renderProjectTerminal(projectDirectory, {
-            color: process.stdout.isTTY === true,
-          }),
-        );
-      },
-    );
+importCommand
+  .command("text")
+  .description("render text onto the calendar with a built-in pixel font")
+  .argument("<content>", "text to render (A-Z, 0-9, space, . ! ? - :)")
+  .requiredOption("--project <path>", "mosaic project directory")
+  .addOption(
+    new Option("--align <align>", "horizontal alignment")
+      .choices(["left", "center", "right"])
+      .default("center"),
+  )
+  .action(
+    async (
+      content: string,
+      options: { project: string; align: "left" | "center" | "right" },
+    ) => {
+      const projectDirectory = path.resolve(options.project);
+      const { project, report } = await importText(projectDirectory, content, {
+        align: options.align,
+      });
+      writeOutput(program, `Imported text into ${project.name}\n`);
+      writeOutput(program, formatFitReport(report));
+      writeOutput(
+        program,
+        await renderProjectTerminal(projectDirectory, {
+          color: process.stdout.isTTY === true,
+        }),
+      );
+    },
+  );
 ```
 
 5. Update the `import` group description to `"import an image, text, or intensity matrix"`.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pnpm vitest run apps/cli && pnpm typecheck`
 Expected: PASS.
 
-- [ ] **Step 5: Manual smoke test (required)**
+- [x] **Step 5: Manual smoke test (required)**
 
 ```bash
 cd /tmp && rm -rf gm-smoke && mkdir gm-smoke && cd gm-smoke
@@ -2646,7 +2807,7 @@ gm preview --project ./demo --estimate
 
 Expected: "Loading..." is READABLE in the first preview (this was the original bug); `--estimate` may look different and that is fine. If the text is not readable, stop and fix before committing.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 pnpm format
@@ -2661,6 +2822,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 14: Web editor — text import, fit reports, estimate toggle
 
 **Files:**
+
 - Modify: `apps/web/src/server.ts` (extend `imageOptions` ~:217; new `/api/text/import` route next to `/api/image/import` ~:426)
 - Modify: `apps/web/src/contracts.ts` (`WebApi.importImage` return type; new `importText`)
 - Modify: `apps/web/src/api.ts` (importImage return shape; new `importText`)
@@ -2668,6 +2830,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Test: extend `apps/web/src/server.test.ts` and `apps/web/src/api.test.ts` following their existing patterns
 
 **Interfaces:**
+
 - Consumes: `importText`, `ImageImportOptions` (core), `FitReport`
 - Produces:
   - `POST /api/text/import` body `{ path, content, options?: { align? } }` → `{ project, report }`
@@ -2675,7 +2838,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   - `WebApi.importImage` returns `Promise<{ project: MosaicProject; report: FitReport }>`; `WebApi.importText(projectPath, content, options?)` mirrors it
   - App shows the report verdict in the status line; a `bad` image verdict surfaces the remedies and offers a confirm-to-force retry.
 
-- [ ] **Step 1: Write the failing server tests**
+- [x] **Step 1: Write the failing server tests**
 
 Append to `apps/web/src/server.test.ts`. It already has `temporaryDirectory`, `startServer`, `session`, and `post` helpers and imports `initializeProject` from `@git-mosaic/core`; add `import sharp from "sharp";` at the top (sharp is already reachable through the workspace; if the typecheck complains, add `"sharp": "^0.34.1"` to `apps/web/package.json` devDependencies and `pnpm install`).
 
@@ -2756,9 +2919,9 @@ describe("image import fit gate over the local API", () => {
       dataBase64,
     });
     expect(blocked.ok).toBe(false);
-    expect(((await blocked.json()) as { error: { code: string } }).error.code).toBe(
-      "GM018",
-    );
+    expect(
+      ((await blocked.json()) as { error: { code: string } }).error.code,
+    ).toBe("GM018");
 
     const forced = await post(baseUrl, token, "/api/image/import", {
       path: directory,
@@ -2778,12 +2941,12 @@ describe("image import fit gate over the local API", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm vitest run apps/web/src/server.test.ts`
 Expected: FAIL — 404 for `/api/text/import`; no `report` in image import response.
 
-- [ ] **Step 3: Implement the server**
+- [x] **Step 3: Implement the server**
 
 In `apps/web/src/server.ts`:
 
@@ -2791,13 +2954,13 @@ In `apps/web/src/server.ts`:
 2. Extend `imageOptions` (return type `ImageImportOptions`): after the existing `contrast` validation add:
 
 ```ts
-  const mode = options.mode;
-  if (mode !== undefined && mode !== "levels" && mode !== "binary") {
-    throw new HttpError(400, "options.mode is invalid");
-  }
-  const normalize = optionalBoolean(options, "normalize");
-  const dithering = optionalBoolean(options, "dithering");
-  const force = optionalBoolean(options, "force");
+const mode = options.mode;
+if (mode !== undefined && mode !== "levels" && mode !== "binary") {
+  throw new HttpError(400, "options.mode is invalid");
+}
+const normalize = optionalBoolean(options, "normalize");
+const dithering = optionalBoolean(options, "dithering");
+const force = optionalBoolean(options, "force");
 ```
 
 and add to the returned object:
@@ -2813,32 +2976,31 @@ and add to the returned object:
 4. Add after the `/api/image/debug` handler:
 
 ```ts
-        if (url.pathname === "/api/text/import") {
-          const content = requiredString(body, "content");
-          const rawOptions =
-            body.options === undefined ? {} : objectBody(body.options);
-          const align = rawOptions.align;
-          if (
-            align !== undefined &&
-            align !== "left" &&
-            align !== "center" &&
-            align !== "right"
-          ) {
-            throw new HttpError(400, "options.align is invalid");
-          }
-          const { project, report } = await importText(
-            projectPath(body),
-            content,
-            align === undefined ? {} : { align },
-          );
-          sendJson(response, 200, { project, report });
-          return;
-        }
+if (url.pathname === "/api/text/import") {
+  const content = requiredString(body, "content");
+  const rawOptions = body.options === undefined ? {} : objectBody(body.options);
+  const align = rawOptions.align;
+  if (
+    align !== undefined &&
+    align !== "left" &&
+    align !== "center" &&
+    align !== "right"
+  ) {
+    throw new HttpError(400, "options.align is invalid");
+  }
+  const { project, report } = await importText(
+    projectPath(body),
+    content,
+    align === undefined ? {} : { align },
+  );
+  sendJson(response, 200, { project, report });
+  return;
+}
 ```
 
 (Match the surrounding handlers exactly for how `body`/`objectBody`/`projectPath` are used — read them before editing. `GitMosaicError` instances already flow through the server's existing error mapping to `{ error: { code, message, hint } }`.)
 
-- [ ] **Step 4: Client and UI**
+- [x] **Step 4: Client and UI**
 
 In `apps/web/src/contracts.ts`: add `import type { FitReport } from "@git-mosaic/schemas";`, define
 
@@ -2884,12 +3046,12 @@ In `apps/web/src/App.tsx`:
 1. Update the `importImage` callback (line 351) for the new shape:
 
 ```ts
-      const [outcome, debug] = await Promise.all([
-        api.importImage(targetPath, file),
-        api.debugImage(file),
-      ]);
-      externalProject.current = outcome.project;
-      editor.replaceProject(outcome.project);
+const [outcome, debug] = await Promise.all([
+  api.importImage(targetPath, file),
+  api.debugImage(file),
+]);
+externalProject.current = outcome.project;
+editor.replaceProject(outcome.project);
 ```
 
 and set the status to include the verdict: `setStatus(`${t("imported")} — fit ${outcome.report.verdict}`);`. On a rejection whose message starts with `GM018`, show `window.confirm(`${t("fitBadConfirm")}\n\n${message}`)` and, if confirmed, retry `api.importImage(targetPath, file, { force: true })`.
@@ -2907,12 +3069,12 @@ and set the status to include the verdict: `setStatus(`${t("imported")} — fit 
 
 Follow the file's existing form/label markup patterns (see the image drop zone around line 721) so styling and accessibility attributes stay consistent.
 
-- [ ] **Step 5: Run all web tests**
+- [x] **Step 5: Run all web tests**
 
 Run: `pnpm vitest run apps/web && pnpm typecheck`
 Expected: PASS, including updated `api.test.ts`/`App.test.tsx` expectations for the new `importImage` return shape (update mocks that stubbed `importImage` to resolve `{ project, report }`).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 pnpm format
@@ -2927,13 +3089,15 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 15: Documentation and full verification
 
 **Files:**
+
 - Modify: `README.md`, `docs/file-formats.md`, `docs/calendar-model.md`, `docs/troubleshooting.md`
 
 **Interfaces:**
+
 - Consumes: everything above
 - Produces: accurate docs; a verified, formatted, fully green workspace
 
-- [ ] **Step 1: Update documentation**
+- [x] **Step 1: Update documentation**
 
 - `README.md`:
   - In the feature paragraph (line ~13), add text import and fit verdicts to the supported list.
@@ -2951,7 +3115,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - `docs/calendar-model.md`: in "Intensity and counts", state that the default preview is the drawn intensity and the quartile estimate is opt-in.
 - `docs/troubleshooting.md`: add entries for `GM016` (text does not fit — shows needed vs available columns and remedies), `GM017` (unsupported character), `GM018` (low expressibility — what the signals mean, `--force`).
 
-- [ ] **Step 2: Full verification**
+- [x] **Step 2: Full verification**
 
 ```bash
 cd /home/default/projects/git-mosaic
@@ -2960,7 +3124,7 @@ pnpm format && pnpm check
 
 Expected: format, lint, typecheck, tests, and pack-check all green.
 
-- [ ] **Step 3: End-to-end acceptance (the original complaint)**
+- [x] **Step 3: End-to-end acceptance (the original complaint)**
 
 ```bash
 cd /tmp && rm -rf gm-accept && mkdir gm-accept && cd gm-accept
@@ -2978,7 +3142,7 @@ gm import text "lorem ipsum dolorlorem ipsum dolorlorem ipsum dolorlorem ipsum d
 
 Acceptance: exit non-zero, message shows needed vs available columns and the shorten/split remedies, and the project still contains "Loading...".
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 pnpm format
@@ -2997,6 +3161,3 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - Commit-count optimizer matching quartile estimates.
 - Lowercase glyphs, comma, or extended punctuation (charset is A-Z 0-9 space `. ! ? - :`).
 - Changing the plan/apply pipeline — this plan only touches import, preview, CLI/web surfaces, schemas, and docs.
-
-
-

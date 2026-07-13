@@ -54,9 +54,48 @@ zero. `weekStartsOn` is currently always `0` (Sunday).
   "path": "assets/source.png",
   "fit": "contain",
   "invert": false,
-  "dithering": false
+  "dithering": false,
+  "mode": "levels",
+  "normalize": true
+}
+{
+  "type": "text",
+  "content": "Loading...",
+  "font": "5x7",
+  "align": "center"
 }
 ```
+
+Image `mode` is either `levels` (five shades) or `binary` (only intensities 0
+and 4). `normalize` stretches the grayscale histogram before quantization, and
+`dithering` enables deterministic Floyd–Steinberg error diffusion in `levels`
+mode. Text `font` records the selected `5x7`, `4x5`, or `3x5` tier; `align` is
+`left`, `center`, or `right`. Text import writes no asset file.
+
+## Import fit reports
+
+Image and text imports return a fit report alongside the updated project. The
+report is an API/command result and is not stored in `mosaic.json`:
+
+```json
+{
+  "verdict": "degraded",
+  "score": 0.6,
+  "signals": {
+    "fontTier": "3x5",
+    "columnsUsed": 49,
+    "columnsAvailable": 51
+  },
+  "survives": ["every character at the 3x5 pixel font"],
+  "lost": ["stroke detail: 3x5 is the legibility floor"],
+  "remedies": ["shorten the text to use a larger font tier"]
+}
+```
+
+`verdict` is `good`, `degraded`, or `bad`, and `score` is in `0..1`. Image
+reports instead provide `aspectEfficiency`, `edgeSurvival`, and
+`toneSeparability` signals. A `bad` image is rejected before project or asset
+files are changed unless the caller explicitly sets `force`.
 
 An optional `existingContributions` contains the validated GitHub snapshot. An
 optional free-form `metadata` object is reserved for non-domain metadata.

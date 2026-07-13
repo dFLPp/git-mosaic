@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="133" height="151" viewBox="0 0 133 151" role="img" aria-labelledby="git-mosaic-title git-mosaic-description">
   <title id="git-mosaic-title">Contribution mosaic preview</title>
-  <desc id="git-mosaic-description">Contribution calendar from 2025-01-05 to 2025-02-08. Colors are estimates and may differ from GitHub.</desc>
+  <desc id="git-mosaic-description">Contribution calendar from 2025-01-05 to 2025-02-08. GitHub may render different contribution levels and colors.</desc>
   <rect width="133" height="151" fill="#ffffff"/>
   <g font-family="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="10" fill="#1f2328">
     <g class="month-labels" aria-hidden="true">

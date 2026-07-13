@@ -8,12 +8,12 @@ from touching a repository, and the tool never pushes.
 > The generated history is contribution artwork, not a record of development
 > activity. Disclose that fact in repositories created with this tool. GitHub's
 > final contribution levels and colors are calculated by GitHub and can differ
-> from the local estimate.
+> from the local preview.
 
 The current release supports JSON intensity matrices, PNG/JPEG/WebP images,
-terminal and SVG previews, new or existing repositories, empty or file commits,
-safe resumable application, an optional GitHub contribution snapshot, and a
-local web editor.
+crisp pixel-font text, import fit verdicts, terminal and SVG previews, new or
+existing repositories, empty or file commits, safe resumable application, an
+optional GitHub contribution snapshot, and a local web editor.
 
 ![Example contribution mosaic preview](docs/assets/preview.svg)
 
@@ -60,6 +60,15 @@ converted to a 7-row intensity map.
 gm import image ./art.png --project ./demo --fit contain
 gm preview --project ./demo
 gm preview --project ./demo --theme light --output ./demo/exports/preview.svg
+```
+
+Text is stamped directly onto calendar cells, so its strokes are never blurred
+by image resampling:
+
+```bash
+gm import text "Loading..." --project ./demo
+gm preview --project ./demo            # shows exactly what you drew
+gm preview --project ./demo --estimate # GitHub-style quartile estimate
 ```
 
 Create and inspect a deterministic plan. Use an email associated with the
@@ -141,19 +150,22 @@ pnpm --filter @git-mosaic/web-local start
 ```
 
 Then open `http://127.0.0.1:4173`. The editor supports keyboard-accessible
-painting, numeric intensity labels, zoom, undo/redo, image drop, SVG export,
-English/Portuguese UI, plan review, dry-run, and confirmed application. It uses
-a random local session header, same-origin checks, a request-size limit, and a
-strict Content Security Policy. It never pushes.
+painting, numeric intensity labels, zoom, undo/redo, image and text import, fit
+verdicts with an explicit force retry, artistic/estimate preview modes, SVG
+export, English/Portuguese UI, plan review, dry-run, and confirmed application.
+It uses a random local session header, same-origin checks, a request-size limit,
+and a strict Content Security Policy. It never pushes.
 
 ## What the preview means
 
-Intensity values `0..4` map to `0, 1, 4, 10, 20` planned commits by default.
-The preview ranks positive final counts into approximate quartiles. Imported
-GitHub days retain observed levels only when no new commits are planned; mixed
-days are estimates. GitHub can render a different result because its algorithm,
-eligibility rules, account email association, repository status, and later
-activity are outside this tool's control.
+The default preview is WYSIWYG: drawn intensities `0..4` are shown one-to-one as
+GitHub's five visual levels. Pass `--estimate` to rank the resulting positive
+commit counts into approximate quartiles instead. Intensity values `0..4` map to
+`0, 1, 4, 10, 20` planned commits by default. Imported GitHub days retain
+observed levels only when no new commits are planned; mixed days are estimates.
+GitHub can render a different result because its algorithm, eligibility rules,
+account email association, repository status, and later activity are outside
+this tool's control.
 
 ## Safety model
 
@@ -183,14 +195,18 @@ Read [Git generation, safety, and resume](docs/git-generation.md) before using
 
 ## Limitations
 
-- Preview colors are estimates, not a promise of GitHub's rendering.
+- Preview colors show the selected artistic or estimate mode, not a promise of
+  GitHub's rendering.
 - The CLI does not push, create a GitHub repository, or verify that GitHub will
   count a commit.
 - Image import supports PNG, JPEG, and WebP only; SVG and animated formats are
   not accepted.
 - The week always starts on Sunday and the canvas always has seven rows.
-- There is no text renderer, PNG preview export, automatic branch discovery,
-  or commit-count optimizer in the current release.
+- Text supports A-Z, 0-9, space, and `. ! ? - :` at three font sizes; text that
+  cannot fit at the smallest legible font is refused with remedies rather than
+  rendered illegibly.
+- There is no PNG preview export, automatic branch discovery, or commit-count
+  optimizer in the current release.
 - GitHub snapshot import needs network access and a token; cached projects remain
   usable offline.
 

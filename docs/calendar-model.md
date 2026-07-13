@@ -63,9 +63,13 @@ When a GitHub snapshot is present, the preview calculates:
 final count = observed count + planned count
 ```
 
-Positive final counts are sorted and classified by their empirical upper rank:
-up to 25%, 50%, 75%, and 100%. Equal counts receive the same upper rank. This is
-a useful local contrast estimate, not GitHub's private rendering algorithm.
+The default preview shows the drawn intensity directly: intensity 0 is `NONE`,
+1 is `FIRST_QUARTILE`, through 4 as `FOURTH_QUARTILE`. This WYSIWYG view shows
+the artwork as authored regardless of the commit-count mapping. The optional
+`--estimate` preview sorts positive final counts and classifies them by their
+empirical upper rank: up to 25%, 50%, 75%, and 100%. Equal counts receive the
+same upper rank. This is a useful local contrast estimate, not GitHub's private
+rendering algorithm.
 
 Confidence is `ESTIMATED` without observed data, `OBSERVED` for an unchanged day
 from a snapshot, and `MIXED` when an observed day also receives planned commits.
