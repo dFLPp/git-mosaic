@@ -1,0 +1,50 @@
+{
+  "name": "git-mosaic",
+  "version": "0.1.0",
+  "description": "Preview-first GitHub contribution mosaic generator",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "git-mosaic": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "git",
+    "github",
+    "contributions",
+    "mosaic",
+    "cli"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "node ../../scripts/clean-package.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@git-mosaic/calendar": "workspace:*",
+    "@git-mosaic/core": "workspace:*",
+    "@git-mosaic/git": "workspace:*",
+    "@git-mosaic/github": "workspace:*",
+    "@git-mosaic/image": "workspace:*",
+    "@git-mosaic/renderer": "workspace:*",
+    "@git-mosaic/schemas": "workspace:*",
+    "commander": "^13.1.0"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@git-mosaic/core",
+  "version": "0.1.0",
+  "description": "Core project, preview, and planning APIs for git-mosaic",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "node ../../scripts/clean-package.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@git-mosaic/calendar": "workspace:*",
+    "@git-mosaic/github": "workspace:*",
+    "@git-mosaic/image": "workspace:*",
+    "@git-mosaic/renderer": "workspace:*",
+    "@git-mosaic/schemas": "workspace:*"
+  }
+}

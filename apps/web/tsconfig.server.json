@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist-server",
+    "tsBuildInfoFile": "tsconfig.server.tsbuildinfo"
+  },
+  "include": ["src/server.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

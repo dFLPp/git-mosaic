@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "name": "example-mosaic",
+  "createdAt": "2026-07-12T12:00:00.000Z",
+  "updatedAt": "2026-07-12T12:00:00.000Z",
+  "period": {
+    "from": "2025-01-05",
+    "to": "2025-02-08"
+  },
+  "timezone": "UTC",
+  "weekStartsOn": 0,
+  "dimensions": {
+    "rows": 7,
+    "columns": 5
+  },
+  "source": {
+    "type": "matrix",
+    "path": "pattern.json"
+  },
+  "intensityMap": [
+    [4, 0, 0, 0, 4],
+    [4, 4, 0, 4, 4],
+    [4, 0, 4, 0, 4],
+    [4, 0, 0, 0, 4],
+    [4, 0, 0, 0, 4],
+    [4, 0, 0, 0, 4],
+    [4, 0, 0, 0, 4]
+  ],
+  "commitLevelMap": {
+    "0": 0,
+    "1": 1,
+    "2": 4,
+    "3": 10,
+    "4": 20
+  }
+}

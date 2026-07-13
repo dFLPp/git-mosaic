@@ -1,0 +1,38 @@
+{
+  "name": "@git-mosaic/git",
+  "version": "0.1.0",
+  "description": "Safe Git materialization for git-mosaic commit plans",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "node ../../scripts/clean-package.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@git-mosaic/schemas": "workspace:*",
+    "execa": "^9.5.2"
+  },
+  "devDependencies": {
+    "@git-mosaic/core": "workspace:*"
+  }
+}

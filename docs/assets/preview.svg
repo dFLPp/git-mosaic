@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="133" height="151" viewBox="0 0 133 151" role="img" aria-labelledby="git-mosaic-title git-mosaic-description">
+  <title id="git-mosaic-title">Contribution mosaic preview</title>
+  <desc id="git-mosaic-description">Contribution calendar from 2025-01-05 to 2025-02-08. Colors are estimates and may differ from GitHub.</desc>
+  <rect width="133" height="151" fill="#ffffff"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="10" fill="#1f2328">
+    <g class="month-labels" aria-hidden="true">
+      <text x="36" y="12">Jan</text>
+      <text x="92" y="12">Feb</text>
+    </g>
+    <g class="weekday-labels" aria-hidden="true">
+      <text x="0" y="32">Sun</text>
+      <text x="0" y="46">Mon</text>
+      <text x="0" y="60">Tue</text>
+      <text x="0" y="74">Wed</text>
+      <text x="0" y="88">Thu</text>
+      <text x="0" y="102">Fri</text>
+      <text x="0" y="116">Sat</text>
+    </g>
+    <g class="contribution-grid">
+      <rect x="36" y="22" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-05" data-state="in-range" data-level="4"><title>2025-01-05: 20 contributions, level 4, estimated</title></rect>
+      <rect x="36" y="36" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-06" data-state="in-range" data-level="4"><title>2025-01-06: 20 contributions, level 4, estimated</title></rect>
+      <rect x="36" y="50" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-07" data-state="in-range" data-level="4"><title>2025-01-07: 20 contributions, level 4, estimated</title></rect>
+      <rect x="36" y="64" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-08" data-state="in-range" data-level="4"><title>2025-01-08: 20 contributions, level 4, estimated</title></rect>
+      <rect x="36" y="78" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-09" data-state="in-range" data-level="4"><title>2025-01-09: 20 contributions, level 4, estimated</title></rect>
+      <rect x="36" y="92" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-10" data-state="in-range" data-level="4"><title>2025-01-10: 20 contributions, level 4, estimated</title></rect>
+      <rect x="36" y="106" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-11" data-state="in-range" data-level="4"><title>2025-01-11: 20 contributions, level 4, estimated</title></rect>
+      <rect x="50" y="22" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-12" data-state="in-range" data-level="0"><title>2025-01-12: 0 contributions, level 0, estimated</title></rect>
+      <rect x="50" y="36" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-13" data-state="in-range" data-level="4"><title>2025-01-13: 20 contributions, level 4, estimated</title></rect>
+      <rect x="50" y="50" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-14" data-state="in-range" data-level="0"><title>2025-01-14: 0 contributions, level 0, estimated</title></rect>
+      <rect x="50" y="64" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-15" data-state="in-range" data-level="0"><title>2025-01-15: 0 contributions, level 0, estimated</title></rect>
+      <rect x="50" y="78" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-16" data-state="in-range" data-level="0"><title>2025-01-16: 0 contributions, level 0, estimated</title></rect>
+      <rect x="50" y="92" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-17" data-state="in-range" data-level="0"><title>2025-01-17: 0 contributions, level 0, estimated</title></rect>
+      <rect x="50" y="106" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-18" data-state="in-range" data-level="0"><title>2025-01-18: 0 contributions, level 0, estimated</title></rect>
+      <rect x="64" y="22" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-19" data-state="in-range" data-level="0"><title>2025-01-19: 0 contributions, level 0, estimated</title></rect>
+      <rect x="64" y="36" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-20" data-state="in-range" data-level="0"><title>2025-01-20: 0 contributions, level 0, estimated</title></rect>
+      <rect x="64" y="50" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-21" data-state="in-range" data-level="4"><title>2025-01-21: 20 contributions, level 4, estimated</title></rect>
+      <rect x="64" y="64" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-22" data-state="in-range" data-level="0"><title>2025-01-22: 0 contributions, level 0, estimated</title></rect>
+      <rect x="64" y="78" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-23" data-state="in-range" data-level="0"><title>2025-01-23: 0 contributions, level 0, estimated</title></rect>
+      <rect x="64" y="92" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-24" data-state="in-range" data-level="0"><title>2025-01-24: 0 contributions, level 0, estimated</title></rect>
+      <rect x="64" y="106" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-25" data-state="in-range" data-level="0"><title>2025-01-25: 0 contributions, level 0, estimated</title></rect>
+      <rect x="78" y="22" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-26" data-state="in-range" data-level="0"><title>2025-01-26: 0 contributions, level 0, estimated</title></rect>
+      <rect x="78" y="36" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-01-27" data-state="in-range" data-level="4"><title>2025-01-27: 20 contributions, level 4, estimated</title></rect>
+      <rect x="78" y="50" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-28" data-state="in-range" data-level="0"><title>2025-01-28: 0 contributions, level 0, estimated</title></rect>
+      <rect x="78" y="64" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-29" data-state="in-range" data-level="0"><title>2025-01-29: 0 contributions, level 0, estimated</title></rect>
+      <rect x="78" y="78" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-30" data-state="in-range" data-level="0"><title>2025-01-30: 0 contributions, level 0, estimated</title></rect>
+      <rect x="78" y="92" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-01-31" data-state="in-range" data-level="0"><title>2025-01-31: 0 contributions, level 0, estimated</title></rect>
+      <rect x="78" y="106" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-date="2025-02-01" data-state="in-range" data-level="0"><title>2025-02-01: 0 contributions, level 0, estimated</title></rect>
+      <rect x="92" y="22" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-02-02" data-state="in-range" data-level="4"><title>2025-02-02: 20 contributions, level 4, estimated</title></rect>
+      <rect x="92" y="36" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-02-03" data-state="in-range" data-level="4"><title>2025-02-03: 20 contributions, level 4, estimated</title></rect>
+      <rect x="92" y="50" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-02-04" data-state="in-range" data-level="4"><title>2025-02-04: 20 contributions, level 4, estimated</title></rect>
+      <rect x="92" y="64" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-02-05" data-state="in-range" data-level="4"><title>2025-02-05: 20 contributions, level 4, estimated</title></rect>
+      <rect x="92" y="78" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-02-06" data-state="in-range" data-level="4"><title>2025-02-06: 20 contributions, level 4, estimated</title></rect>
+      <rect x="92" y="92" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-02-07" data-state="in-range" data-level="4"><title>2025-02-07: 20 contributions, level 4, estimated</title></rect>
+      <rect x="92" y="106" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-date="2025-02-08" data-state="in-range" data-level="4"><title>2025-02-08: 20 contributions, level 4, estimated</title></rect>
+    </g>
+    <g class="legend" aria-label="Contribution level legend">
+      <text x="8" y="145">Less</text>
+      <rect x="36" y="135" width="11" height="11" rx="2" fill="#ebedf0" stroke="#d0d7de" data-level="0"/>
+      <rect x="50" y="135" width="11" height="11" rx="2" fill="#9be9a8" stroke="#d0d7de" data-level="1"/>
+      <rect x="64" y="135" width="11" height="11" rx="2" fill="#40c463" stroke="#d0d7de" data-level="2"/>
+      <rect x="78" y="135" width="11" height="11" rx="2" fill="#30a14e" stroke="#d0d7de" data-level="3"/>
+      <rect x="92" y="135" width="11" height="11" rx="2" fill="#216e39" stroke="#d0d7de" data-level="4"/>
+      <text x="108" y="145">More</text>
+    </g>
+  </g>
+</svg>

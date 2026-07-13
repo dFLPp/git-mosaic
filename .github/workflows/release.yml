@@ -1,0 +1,78 @@
+name: Release packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish all workspace packages to npm (requires a matching vX.Y.Z tag and NPM_TOKEN)
+        required: true
+        type: boolean
+        default: false
+      npm-tag:
+        description: npm distribution tag used when publishing
+        required: true
+        type: string
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Verify and package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm run pack
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-packages-${{ github.sha }}
+          path: artifacts/*.tgz
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish to npm
+    if: inputs.publish
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Validate explicit npm release authorization
+        run: node scripts/check-release.mjs
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_REF_TYPE: ${{ github.ref_type }}
+          NPM_DIST_TAG: ${{ inputs.npm-tag }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish workspace packages
+        run: pnpm --filter './packages/*' --filter 'git-mosaic' -r publish --access public --no-git-checks --tag "${NPM_DIST_TAG}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_DIST_TAG: ${{ inputs.npm-tag }}
