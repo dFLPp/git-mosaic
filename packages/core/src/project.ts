@@ -26,6 +26,7 @@ import {
   type IntensityMap,
   type MosaicProject,
 } from "@git-mosaic/schemas";
+import { stampTextOnCalendar, type TextAlign } from "@git-mosaic/text";
 import { GitMosaicError } from "./errors.js";
 
 export const projectFileName = "mosaic.json";
@@ -337,6 +338,30 @@ export async function importImageBuffer(
       normalize: rasterOptions.normalize ?? true,
     },
     intensityMap,
+  });
+  await writeProject(projectDirectory, updated);
+  return { project: updated, report };
+}
+
+export async function importText(
+  projectDirectory: string,
+  content: string,
+  options: { align?: TextAlign } = {},
+  now = new Date().toISOString(),
+): Promise<{ project: MosaicProject; report: FitReport }> {
+  const project = await readProject(projectDirectory);
+  const calendar = buildCalendar(project.period, project.timezone);
+  const { map, report, tier } = stampTextOnCalendar(content, calendar, options);
+  const updated = mosaicProjectSchema.parse({
+    ...project,
+    updatedAt: now,
+    source: {
+      type: "text",
+      content,
+      font: tier,
+      align: options.align ?? "center",
+    },
+    intensityMap: map,
   });
   await writeProject(projectDirectory, updated);
   return { project: updated, report };

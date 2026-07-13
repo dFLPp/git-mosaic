@@ -37,7 +37,8 @@
     "@git-mosaic/github": "workspace:*",
     "@git-mosaic/image": "workspace:*",
     "@git-mosaic/renderer": "workspace:*",
-    "@git-mosaic/schemas": "workspace:*"
+    "@git-mosaic/schemas": "workspace:*",
+    "@git-mosaic/text": "workspace:*"
   },
   "devDependencies": {
     "sharp": "^0.34.1"

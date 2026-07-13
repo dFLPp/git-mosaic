@@ -132,6 +132,9 @@ importers:
       '@git-mosaic/schemas':
         specifier: workspace:*
         version: link:../schemas
+      '@git-mosaic/text':
+        specifier: workspace:*
+        version: link:../text
     devDependencies:
       sharp:
         specifier: ^0.34.1
