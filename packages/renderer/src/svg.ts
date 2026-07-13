@@ -172,7 +172,7 @@ export function renderSvg(
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="git-mosaic-title git-mosaic-description">`,
     '  <title id="git-mosaic-title">Contribution mosaic preview</title>',
-    `  <desc id="git-mosaic-description">Contribution calendar from ${escapeXml(calendar.period.from)} to ${escapeXml(calendar.period.to)}. Colors are estimates and may differ from GitHub.</desc>`,
+    `  <desc id="git-mosaic-description">Contribution calendar from ${escapeXml(calendar.period.from)} to ${escapeXml(calendar.period.to)}. GitHub may render different contribution levels and colors.</desc>`,
     `  <rect width="${width}" height="${height}" fill="${palette.background}"/>`,
     `  <g font-family="-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif" font-size="10" fill="${palette.text}">`,
   ];

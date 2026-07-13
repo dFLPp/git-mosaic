@@ -36,7 +36,7 @@ describe("project preview rendering", () => {
     const firstSvg = await renderProjectSvg(root, { theme: "light" });
     const secondSvg = await renderProjectSvg(root, { theme: "light" });
     expect(terminal).toContain(
-      "Warning: GitHub contribution levels and colors are estimates.",
+      "Warning: GitHub may render different contribution levels and colors.",
     );
     expect(terminal).toContain("░");
     expect(estimatedTerminal).toContain("█");

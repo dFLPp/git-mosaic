@@ -91,8 +91,8 @@ const ANSI_BY_THEME: Record<PreviewTheme, Record<CalendarLevel, string>> = {
 };
 
 const ANSI_RESET = "\u001B[0m";
-const ESTIMATE_WARNING =
-  "Warning: GitHub contribution levels and colors are estimates.";
+const GITHUB_RENDERING_WARNING =
+  "Warning: GitHub may render different contribution levels and colors.";
 
 function assertLabelCount(
   labels: readonly string[],
@@ -229,9 +229,9 @@ export function renderTerminal(
   }
 
   lines.push(`Confidence: ${confidenceOf(calendar)}`);
-  // This warning is deliberately not controlled by showLegend: the approximation
-  // must remain explicit in every preview configuration.
-  lines.push(ESTIMATE_WARNING);
+  // This caveat is deliberately not controlled by showLegend: GitHub's final
+  // rendering remains outside the tool's control in every preview mode.
+  lines.push(GITHUB_RENDERING_WARNING);
 
   return { content: `${lines.join("\n")}\n`, mediaType: "text/plain" };
 }

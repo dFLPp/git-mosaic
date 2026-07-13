@@ -43,7 +43,7 @@ describe("renderTerminal", () => {
       Sat ▓ █
       Legend: × out of range  · none  ░ level 1  ▒ level 2  ▓ level 3  █ level 4
       Confidence: MIXED
-      Warning: GitHub contribution levels and colors are estimates.
+      Warning: GitHub may render different contribution levels and colors.
       "
     `);
     expect(new Set(["·", "░", "▒", "▓", "█", "×"]).size).toBe(6);
@@ -67,7 +67,7 @@ describe("renderTerminal", () => {
     expect(ansi).toContain("\u001B[");
     expect(ansi.replaceAll(/\u001B\[[0-9;]*m/g, "")).toBe(plain);
     expect(plain).toContain(
-      "Warning: GitHub contribution levels and colors are estimates.",
+      "Warning: GitHub may render different contribution levels and colors.",
     );
   });
 
@@ -107,7 +107,7 @@ describe("renderTerminal", () => {
     expect(result).not.toContain("Legend:");
     expect(result).toMatch(/^× ·/);
     expect(result).toMatch(
-      /Warning: GitHub contribution levels and colors are estimates\.\n$/,
+      /Warning: GitHub may render different contribution levels and colors\.\n$/,
     );
   });
 

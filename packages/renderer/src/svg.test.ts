@@ -100,7 +100,7 @@ describe("renderSvg", () => {
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
       <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"2\" height=\"14\" viewBox=\"0 0 2 14\" role=\"img\" aria-labelledby=\"git-mosaic-title git-mosaic-description\">
         <title id=\"git-mosaic-title\">Contribution mosaic preview</title>
-        <desc id=\"git-mosaic-description\">Contribution calendar from 2026-01-04 to 2026-01-04. Colors are estimates and may differ from GitHub.</desc>
+        <desc id=\"git-mosaic-description\">Contribution calendar from 2026-01-04 to 2026-01-04. GitHub may render different contribution levels and colors.</desc>
         <rect width=\"2\" height=\"14\" fill=\"#ffffff\"/>
         <g font-family=\"-apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif\" font-size=\"10\" fill=\"#1f2328\">
           <g class=\"contribution-grid\">

@@ -139,7 +139,7 @@ describe("CLI contract", () => {
       "--no-color",
     ]);
     expect(stdout.mock.calls.map((call) => String(call[0])).join("")).toContain(
-      "Warning: GitHub contribution levels and colors are estimates.",
+      "Warning: GitHub may render different contribution levels and colors.",
     );
 
     const svgPath = path.join(target, "exports", "preview.svg");
