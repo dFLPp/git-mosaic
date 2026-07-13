@@ -11,9 +11,12 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   createCommitPlan,
+  type ImageImportOptions,
   initializeProject,
   importImageBuffer,
+  importText,
   isGitMosaicError,
+  type PreviewMode,
   readCommitPlan,
   readProject,
   renderProjectSvg,
@@ -22,10 +25,7 @@ import {
 } from "@git-mosaic/core";
 import { rollingYearRange, todayInTimezone } from "@git-mosaic/calendar";
 import { applyCommitPlan } from "@git-mosaic/git";
-import {
-  quantizeRasterForDebug,
-  type RasterImportOptions,
-} from "@git-mosaic/image";
+import { quantizeRasterForDebug } from "@git-mosaic/image";
 import type { SvgRenderOptions } from "@git-mosaic/renderer";
 import { mosaicProjectSchema } from "@git-mosaic/schemas";
 import type { PlanFormInput } from "./contracts.js";
@@ -214,13 +214,14 @@ async function readJson(
   }
 }
 
-function imageOptions(record: Record<string, unknown>): RasterImportOptions {
+function imageOptions(record: Record<string, unknown>): ImageImportOptions {
   const value = record.options;
   if (value === undefined) return {};
   const options = objectBody(value);
   const fit = options.fit;
   const invert = optionalBoolean(options, "invert");
   const contrast = options.contrast;
+  const mode = options.mode;
   if (
     fit !== undefined &&
     fit !== "contain" &&
@@ -240,11 +241,30 @@ function imageOptions(record: Record<string, unknown>): RasterImportOptions {
       "options.contrast must be a positive finite number",
     );
   }
+  if (mode !== undefined && mode !== "levels" && mode !== "binary") {
+    throw new HttpError(400, "options.mode is invalid");
+  }
+  const normalize = optionalBoolean(options, "normalize");
+  const dithering = optionalBoolean(options, "dithering");
+  const force = optionalBoolean(options, "force");
   return {
     ...(fit === undefined ? {} : { fit }),
     ...(invert === undefined ? {} : { invert }),
     ...(contrast === undefined ? {} : { contrast }),
+    ...(mode === undefined ? {} : { mode }),
+    ...(normalize === undefined ? {} : { normalize }),
+    ...(dithering === undefined ? {} : { dithering }),
+    ...(force === undefined ? {} : { force }),
   };
+}
+
+function previewMode(record: Record<string, unknown>): PreviewMode {
+  const mode = record.mode;
+  if (mode === undefined) return "artistic";
+  if (mode !== "artistic" && mode !== "estimate") {
+    throw new HttpError(400, "mode is invalid");
+  }
+  return mode;
 }
 
 function svgOptions(record: Record<string, unknown>): SvgRenderOptions {
@@ -432,13 +452,13 @@ export function createLocalServer(options: LocalServerOptions = {}) {
           ) {
             throw new HttpError(400, "dataBase64 must be valid base64");
           }
-          const project = await importImageBuffer(
+          const { project, report } = await importImageBuffer(
             projectPath(body),
             requiredString(body, "fileName"),
             Buffer.from(data, "base64"),
             imageOptions(body),
           );
-          sendJson(response, 200, { project });
+          sendJson(response, 200, { project, report });
           return;
         }
         if (url.pathname === "/api/image/debug") {
@@ -463,10 +483,32 @@ export function createLocalServer(options: LocalServerOptions = {}) {
           });
           return;
         }
+        if (url.pathname === "/api/text/import") {
+          const content = requiredString(body, "content");
+          const rawOptions =
+            body.options === undefined ? {} : objectBody(body.options);
+          const align = rawOptions.align;
+          if (
+            align !== undefined &&
+            align !== "left" &&
+            align !== "center" &&
+            align !== "right"
+          ) {
+            throw new HttpError(400, "options.align is invalid");
+          }
+          const { project, report } = await importText(
+            projectPath(body),
+            content,
+            align === undefined ? {} : { align },
+          );
+          sendJson(response, 200, { project, report });
+          return;
+        }
         if (url.pathname === "/api/preview/svg") {
           const svg = await renderProjectSvg(
             projectPath(body),
             svgOptions(body),
+            previewMode(body),
           );
           sendJson(response, 200, { svg });
           return;

@@ -1,8 +1,14 @@
+import type { ImageImportOptions, PreviewMode } from "@git-mosaic/core";
 import type { ExecutionResult } from "@git-mosaic/git";
 import type { RasterImportOptions } from "@git-mosaic/image";
 import type { SvgRenderOptions } from "@git-mosaic/renderer";
 import type { CommitPlan, MosaicProject } from "@git-mosaic/schemas";
-import type { CreateProjectInput, PlanFormInput, WebApi } from "./contracts.js";
+import type {
+  CreateProjectInput,
+  ImportOutcome,
+  PlanFormInput,
+  WebApi,
+} from "./contracts.js";
 
 interface ErrorResponse {
   error?: { code?: string; message?: string; hint?: string };
@@ -72,15 +78,20 @@ export function createWebApi(baseUrl = ""): WebApi {
         })
       ).project;
     },
-    async importImage(projectPath, file, options: RasterImportOptions = {}) {
-      return (
-        await post<{ project: MosaicProject }>("/api/image/import", {
-          path: projectPath,
-          fileName: file.name,
-          dataBase64: bufferToBase64(await file.arrayBuffer()),
-          options,
-        })
-      ).project;
+    async importImage(projectPath, file, options: ImageImportOptions = {}) {
+      return post<ImportOutcome>("/api/image/import", {
+        path: projectPath,
+        fileName: file.name,
+        dataBase64: bufferToBase64(await file.arrayBuffer()),
+        options,
+      });
+    },
+    async importText(projectPath, content, options = {}) {
+      return post<ImportOutcome>("/api/text/import", {
+        path: projectPath,
+        content,
+        options,
+      });
     },
     async debugImage(file, options: RasterImportOptions = {}) {
       return post<{
@@ -93,11 +104,16 @@ export function createWebApi(baseUrl = ""): WebApi {
         options,
       });
     },
-    async renderSvg(projectPath, options: SvgRenderOptions = {}) {
+    async renderSvg(
+      projectPath,
+      options: SvgRenderOptions = {},
+      mode: PreviewMode = "artistic",
+    ) {
       return (
         await post<{ svg: string }>("/api/preview/svg", {
           path: projectPath,
           options,
+          mode,
         })
       ).svg;
     },

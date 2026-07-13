@@ -459,6 +459,16 @@ main {
   opacity: 0;
 }
 
+.text-import {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9rem, auto) auto;
+  align-items: end;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.9rem;
+}
+
 .plan-form {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -563,6 +573,9 @@ main {
     grid-template-columns: 1fr 1fr;
   }
   .plan-form {
+    grid-template-columns: 1fr;
+  }
+  .text-import {
     grid-template-columns: 1fr;
   }
   .plan-review dl {

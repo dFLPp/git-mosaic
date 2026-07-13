@@ -12,7 +12,7 @@ import {
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ExecutionResult } from "@git-mosaic/git";
-import type { CommitPlan, MosaicProject } from "@git-mosaic/schemas";
+import type { CommitPlan, FitReport, MosaicProject } from "@git-mosaic/schemas";
 import { App } from "./App.js";
 import type { WebApi } from "./contracts.js";
 
@@ -57,11 +57,23 @@ const result: ExecutionResult = {
   createdCommits: 0,
 };
 
+const fitReport: FitReport = {
+  verdict: "good",
+  score: 1,
+  signals: {},
+  survives: ["large shapes"],
+  lost: [],
+  remedies: [],
+};
+
 function fakeApi() {
   const calls = {
     created: 0,
     saved: 0,
     imported: 0,
+    textImported: 0,
+    rendered: 0,
+    renderedMode: "artistic",
     planned: 0,
     dryRuns: 0,
     applied: 0,
@@ -84,12 +96,18 @@ function fakeApi() {
     },
     async importImage() {
       calls.imported += 1;
-      return project(2);
+      return { project: project(2), report: fitReport };
+    },
+    async importText() {
+      calls.textImported += 1;
+      return { project: project(4), report: fitReport };
     },
     async debugImage() {
       return { width: 1, height: 1, intensitiesBase64: "" };
     },
-    async renderSvg() {
+    async renderSvg(_path, _options, mode = "artistic") {
+      calls.rendered += 1;
+      calls.renderedMode = mode;
       return "<svg/>";
     },
     async createPlan() {
@@ -200,6 +218,51 @@ describe("App", () => {
         name: "2026-01-04, Intensity 2",
       }),
     ).toBeInTheDocument();
+  });
+
+  it("imports text and switches the preview and SVG export to estimate mode", async () => {
+    const { api, calls } = fakeApi();
+    const user = await load(api);
+    const grid = screen.getByRole("grid", {
+      name: "Contribution mosaic canvas",
+    });
+    const artistic = screen.getByRole("button", {
+      name: "Drawn intensities",
+    });
+    expect(artistic).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "Intensity 1" }));
+    await user.click(
+      within(grid).getByRole("gridcell", {
+        name: "2026-01-04, Intensity 0",
+      }),
+    );
+    expect(
+      within(grid).getByRole("gridcell", {
+        name: "2026-01-04, Intensity 1",
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "GitHub estimate" }));
+    expect(
+      within(grid).getByRole("gridcell", {
+        name: "2026-01-04, Intensity 4",
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Export SVG" }));
+    await waitFor(() => expect(calls.rendered).toBe(1));
+    expect(calls.renderedMode).toBe("estimate");
+
+    const text = screen.getByLabelText("Write text");
+    await user.clear(text);
+    await user.type(text, "HI");
+    await user.selectOptions(screen.getByLabelText("Text alignment"), "left");
+    await user.click(screen.getByRole("button", { name: "Import text" }));
+    await waitFor(() => expect(calls.textImported).toBe(1));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Text imported. — fit good",
+    );
   });
 
   it("creates and dry-runs a plan, blocking apply until both confirmations", async () => {

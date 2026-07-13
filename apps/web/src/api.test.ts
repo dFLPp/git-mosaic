@@ -72,6 +72,14 @@ describe("web API client", () => {
               schemaVersion: 1,
               name: "test",
             },
+            report: {
+              verdict: "good",
+              score: 1,
+              signals: {},
+              survives: [],
+              lost: [],
+              remedies: [],
+            },
           }),
           { status: 200 },
         );
@@ -87,6 +95,66 @@ describe("web API client", () => {
     });
     await api.importImage("/project", file);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("sends text imports and the selected SVG preview mode", async () => {
+    const requests: Array<{ url: string; body: unknown }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.endsWith("/api/session")) {
+          return new Response(JSON.stringify({ session: "session-token" }), {
+            status: 200,
+          });
+        }
+        requests.push({
+          url,
+          body: JSON.parse(String(init?.body)) as unknown,
+        });
+        return new Response(
+          JSON.stringify(
+            url.endsWith("/api/preview/svg")
+              ? { svg: "<svg/>" }
+              : {
+                  project: { schemaVersion: 1, name: "test" },
+                  report: {
+                    verdict: "good",
+                    score: 1,
+                    signals: {},
+                    survives: [],
+                    lost: [],
+                    remedies: [],
+                  },
+                },
+          ),
+          { status: 200 },
+        );
+      }),
+    );
+
+    const api = createWebApi();
+    await api.importText("/project", "Loading...", { align: "right" });
+    await api.renderSvg("/project", { theme: "dark" }, "estimate");
+
+    expect(requests).toEqual([
+      {
+        url: "/api/text/import",
+        body: {
+          path: "/project",
+          content: "Loading...",
+          options: { align: "right" },
+        },
+      },
+      {
+        url: "/api/preview/svg",
+        body: {
+          path: "/project",
+          options: { theme: "dark" },
+          mode: "estimate",
+        },
+      },
+    ]);
   });
 
   it("surfaces stable server errors without exposing response internals", async () => {

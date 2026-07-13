@@ -10,8 +10,17 @@ import {
   type KeyboardEvent,
   type PointerEvent,
 } from "react";
+import {
+  ArtisticIntensityStrategy,
+  QuartileApproximationStrategy,
+} from "@git-mosaic/calendar";
+import type { PreviewMode } from "@git-mosaic/core";
 import { buildPreviewCalendar } from "@git-mosaic/core/preview";
-import type { Intensity, MosaicProject } from "@git-mosaic/schemas";
+import type {
+  ContributionLevel,
+  Intensity,
+  MosaicProject,
+} from "@git-mosaic/schemas";
 import type { ImageDebugResult, PlanFormInput, WebApi } from "./contracts.js";
 import { useMosaicEditor } from "./useMosaicEditor.js";
 
@@ -58,9 +67,19 @@ const messages = {
     created: "Project created and ready.",
     saved: "mosaic.json saved.",
     imported: "Image imported.",
+    textImported: "Text imported.",
     exported: "SVG exported.",
     planCreated: "Plan created and ready for review.",
     estimated: "Preview colors are estimates and may differ from GitHub.",
+    artistic: "Preview levels match the drawn intensities.",
+    artisticPreview: "Drawn intensities",
+    estimatePreview: "GitHub estimate",
+    previewMode: "Preview mode",
+    textImport: "Write text",
+    textPlaceholder: "Loading...",
+    importTextButton: "Import text",
+    textAlign: "Text alignment",
+    fitBadConfirm: "The fit verdict is BAD - import anyway?",
     canvas: "Contribution mosaic canvas",
     debugOriginal: "Original-pixel debug",
     contributionPreview: "Contribution preview",
@@ -106,9 +125,19 @@ const messages = {
     created: "Projeto criado e pronto.",
     saved: "mosaic.json salvo.",
     imported: "Imagem importada.",
+    textImported: "Texto importado.",
     exported: "SVG exportado.",
     planCreated: "Plano criado e pronto para revisão.",
     estimated: "As cores são estimativas e podem diferir do GitHub.",
+    artistic: "Os níveis da prévia correspondem às intensidades desenhadas.",
+    artisticPreview: "Intensidades desenhadas",
+    estimatePreview: "Estimativa do GitHub",
+    previewMode: "Modo da prévia",
+    textImport: "Escrever texto",
+    textPlaceholder: "Carregando...",
+    importTextButton: "Importar texto",
+    textAlign: "Alinhamento do texto",
+    fitBadConfirm: "O veredito de encaixe é RUIM - importar mesmo assim?",
     canvas: "Canvas do mosaico de contribuições",
     debugOriginal: "Debug dos pixels originais",
     contributionPreview: "Prévia de contribuições",
@@ -137,6 +166,14 @@ const INITIAL_PROJECT: MosaicProject = {
 };
 
 const intensityColors = ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"];
+
+const levelNumber: Record<ContributionLevel, Intensity> = {
+  NONE: 0,
+  FIRST_QUARTILE: 1,
+  SECOND_QUARTILE: 2,
+  THIRD_QUARTILE: 3,
+  FOURTH_QUARTILE: 4,
+};
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -263,6 +300,11 @@ export function App({ api }: AppProps) {
   const [viewMode, setViewMode] = useState<"debug" | "contributions">(
     "contributions",
   );
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("artistic");
+  const [textContent, setTextContent] = useState("Loading...");
+  const [textAlign, setTextAlign] = useState<"left" | "center" | "right">(
+    "center",
+  );
   const [activeCell, setActiveCell] = useState({ row: 0, column: 0 });
   const painting = useRef(false);
   const [status, setStatus] = useState("");
@@ -278,8 +320,14 @@ export function App({ api }: AppProps) {
     commitMode: "empty",
   });
   const preview = useMemo(
-    () => buildPreviewCalendar(editor.project),
-    [editor.project],
+    () =>
+      buildPreviewCalendar(
+        editor.project,
+        previewMode === "estimate"
+          ? new QuartileApproximationStrategy()
+          : new ArtisticIntensityStrategy(),
+      ),
+    [editor.project, previewMode],
   );
 
   const run = async (operation: () => Promise<void>) => {
@@ -353,19 +401,46 @@ export function App({ api }: AppProps) {
       const targetPath = loaded
         ? projectPath
         : (await provisionProject()).projectPath;
-      const [project, debug] = await Promise.all([
-        api.importImage(targetPath, file),
-        api.debugImage(file),
-      ]);
-      externalProject.current = project;
-      editor.replaceProject(project);
+      let outcome;
+      try {
+        outcome = await api.importImage(targetPath, file);
+      } catch (error) {
+        const message = errorMessage(error);
+        if (
+          !message.startsWith("GM018") ||
+          !window.confirm(`${t("fitBadConfirm")}\n\n${message}`)
+        ) {
+          throw error;
+        }
+        outcome = await api.importImage(targetPath, file, { force: true });
+      }
+      const debug = await api.debugImage(file);
+      externalProject.current = outcome.project;
+      editor.replaceProject(outcome.project);
       setDebugImage(debug);
       setViewMode("debug");
       setZoom(1);
       setDirty(false);
       setPlanResult(undefined);
       setExecutionResult(undefined);
-      setStatus(t("imported"));
+      setStatus(`${t("imported")} — fit ${outcome.report.verdict}`);
+    });
+
+  const importText = () =>
+    run(async () => {
+      const targetPath = loaded
+        ? projectPath
+        : (await provisionProject()).projectPath;
+      const outcome = await api.importText(targetPath, textContent, {
+        align: textAlign,
+      });
+      useProject(
+        outcome.project,
+        `${t("textImported")} — fit ${outcome.report.verdict}`,
+      );
+      setDebugImage(undefined);
+      setViewMode("contributions");
+      setZoom(1);
     });
 
   const exportSvg = () =>
@@ -376,7 +451,7 @@ export function App({ api }: AppProps) {
         editor.replaceProject(saved);
         setDirty(false);
       }
-      const svg = await api.renderSvg(projectPath);
+      const svg = await api.renderSvg(projectPath, {}, previewMode);
       const name = `${editor.project.name.replaceAll(/[^a-z0-9_-]+/gi, "-") || "mosaic"}.svg`;
       const written = await saveWithNativeDialog(
         new Blob([svg], { type: "image/svg+xml" }),
@@ -549,7 +624,9 @@ export function App({ api }: AppProps) {
             <div className="section-heading">
               <div>
                 <h2 id="editor-heading">{t("editor")}</h2>
-                <p>{t("estimated")}</p>
+                <p>
+                  {previewMode === "estimate" ? t("estimated") : t("artistic")}
+                </p>
               </div>
               <div className="history-actions">
                 <button
@@ -604,6 +681,35 @@ export function App({ api }: AppProps) {
                     </button>
                   ))}
                 </fieldset>
+
+                <div
+                  className="view-switcher"
+                  role="group"
+                  aria-label={t("previewMode")}
+                >
+                  <button
+                    type="button"
+                    className={previewMode === "artistic" ? "selected" : ""}
+                    aria-pressed={previewMode === "artistic"}
+                    onClick={() => {
+                      setPreviewMode("artistic");
+                      setViewMode("contributions");
+                    }}
+                  >
+                    {t("artisticPreview")}
+                  </button>
+                  <button
+                    type="button"
+                    className={previewMode === "estimate" ? "selected" : ""}
+                    aria-pressed={previewMode === "estimate"}
+                    onClick={() => {
+                      setPreviewMode("estimate");
+                      setViewMode("contributions");
+                    }}
+                  >
+                    {t("estimatePreview")}
+                  </button>
+                </div>
 
                 {debugImage !== undefined && (
                   <div className="view-switcher" role="group" aria-label="View">
@@ -663,10 +769,7 @@ export function App({ api }: AppProps) {
                     >
                       {preview.cells.map((row, rowIndex) =>
                         row.map((cell, columnIndex) => {
-                          const intensity =
-                            editor.project.intensityMap[rowIndex]?.[
-                              columnIndex
-                            ] ?? 0;
+                          const intensity = levelNumber[cell.level];
                           return (
                             <button
                               id={`mosaic-cell-${rowIndex}-${columnIndex}`}
@@ -737,6 +840,43 @@ export function App({ api }: AppProps) {
                 }}
               />
             </label>
+
+            <form
+              className="text-import"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void importText();
+              }}
+            >
+              <label>
+                {t("textImport")}
+                <input
+                  required
+                  maxLength={200}
+                  value={textContent}
+                  placeholder={t("textPlaceholder")}
+                  onChange={(event) => setTextContent(event.target.value)}
+                />
+              </label>
+              <label>
+                {t("textAlign")}
+                <select
+                  value={textAlign}
+                  onChange={(event) =>
+                    setTextAlign(
+                      event.target.value as "left" | "center" | "right",
+                    )
+                  }
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </label>
+              <button type="submit" className="primary" disabled={busy}>
+                {t("importTextButton")}
+              </button>
+            </form>
           </section>
 
           <section className="panel plan-panel" aria-labelledby="plan-heading">

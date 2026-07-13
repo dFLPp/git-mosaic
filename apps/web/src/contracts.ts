@@ -1,7 +1,13 @@
+import type { ImageImportOptions, PreviewMode } from "@git-mosaic/core";
 import type { ExecutionResult } from "@git-mosaic/git";
 import type { RasterImportOptions } from "@git-mosaic/image";
 import type { SvgRenderOptions } from "@git-mosaic/renderer";
-import type { CommitPlan, Intensity, MosaicProject } from "@git-mosaic/schemas";
+import type {
+  CommitPlan,
+  FitReport,
+  Intensity,
+  MosaicProject,
+} from "@git-mosaic/schemas";
 
 export interface PlanFormInput {
   repositoryPath: string;
@@ -32,6 +38,11 @@ export interface ImageDebugResult {
   intensitiesBase64: string;
 }
 
+export interface ImportOutcome {
+  project: MosaicProject;
+  report: FitReport;
+}
+
 export interface WebApi {
   createProject(input: CreateProjectInput): Promise<CreateProjectResult>;
   loadProject(projectPath: string): Promise<MosaicProject>;
@@ -42,13 +53,22 @@ export interface WebApi {
   importImage(
     projectPath: string,
     file: File,
-    options?: RasterImportOptions,
-  ): Promise<MosaicProject>;
+    options?: ImageImportOptions,
+  ): Promise<ImportOutcome>;
+  importText(
+    projectPath: string,
+    content: string,
+    options?: { align?: "left" | "center" | "right" },
+  ): Promise<ImportOutcome>;
   debugImage(
     file: File,
     options?: RasterImportOptions,
   ): Promise<ImageDebugResult>;
-  renderSvg(projectPath: string, options?: SvgRenderOptions): Promise<string>;
+  renderSvg(
+    projectPath: string,
+    options?: SvgRenderOptions,
+    mode?: PreviewMode,
+  ): Promise<string>;
   createPlan(
     projectPath: string,
     input: PlanFormInput,

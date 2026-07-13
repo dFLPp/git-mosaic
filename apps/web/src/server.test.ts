@@ -2,7 +2,8 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { initializeProject } from "@git-mosaic/core";
+import sharp from "sharp";
+import { initializeProject, readProject, writeProject } from "@git-mosaic/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { createLocalServer, type LocalServerOptions } from "./server.js";
 
@@ -64,6 +65,31 @@ async function post(
     },
     body: JSON.stringify(body),
   });
+}
+
+async function textProject(): Promise<string> {
+  const directory = await temporaryDirectory("git-mosaic-web-fit-");
+  await initializeProject(directory, {
+    name: "web-fit",
+    period: { from: "2025-01-01", to: "2025-12-31" },
+    timezone: "UTC",
+  });
+  return directory;
+}
+
+async function noiseBase64(): Promise<string> {
+  const width = 520;
+  const height = 70;
+  const pixels = new Uint8Array(width * height);
+  let state = 42;
+  for (let index = 0; index < pixels.length; index += 1) {
+    state = (state * 1103515245 + 12345) % 2147483648;
+    pixels[index] = state % 2 === 0 ? 0 : 255;
+  }
+  const png = await sharp(pixels, { raw: { width, height, channels: 1 } })
+    .png()
+    .toBuffer();
+  return png.toString("base64");
 }
 
 describe("local web server boundaries", () => {
@@ -328,5 +354,116 @@ describe("local web API", () => {
     });
     expect(dryRun.status).toBe(400);
     expect(await dryRun.json()).toMatchObject({ error: { code: "GM013" } });
+  });
+});
+
+describe("text import over the local API", () => {
+  it("imports text and returns the project with its fit report", async () => {
+    const directory = await textProject();
+    const { baseUrl } = await startServer();
+    const token = await session(baseUrl);
+
+    const response = await post(baseUrl, token, "/api/text/import", {
+      path: directory,
+      content: "Loading...",
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      project: { source: { type: string; font: string } };
+      report: { verdict: string; signals: { fontTier: string } };
+    };
+    expect(body.project.source).toMatchObject({ type: "text", font: "5x7" });
+    expect(body.report.verdict).toBe("good");
+    expect(body.report.signals.fontTier).toBe("5x7");
+  });
+
+  it("reports text that cannot fit as a GM016 error", async () => {
+    const directory = await textProject();
+    const { baseUrl } = await startServer();
+    const token = await session(baseUrl);
+
+    const response = await post(baseUrl, token, "/api/text/import", {
+      path: directory,
+      content: "lorem ipsum dolor".repeat(5),
+    });
+    expect(response.ok).toBe(false);
+    const body = (await response.json()) as {
+      error: { code: string; message: string; hint?: string };
+    };
+    expect(body.error.code).toBe("GM016");
+    expect(body.error.message).toMatch(/columns/);
+  });
+});
+
+describe("image import fit gate over the local API", () => {
+  it("blocks a low-expressibility image and honors force", async () => {
+    const directory = await textProject();
+    const { baseUrl } = await startServer();
+    const token = await session(baseUrl);
+    const dataBase64 = await noiseBase64();
+
+    const blocked = await post(baseUrl, token, "/api/image/import", {
+      path: directory,
+      fileName: "noise.png",
+      dataBase64,
+    });
+    expect(blocked.ok).toBe(false);
+    expect(
+      ((await blocked.json()) as { error: { code: string } }).error.code,
+    ).toBe("GM018");
+
+    const forced = await post(baseUrl, token, "/api/image/import", {
+      path: directory,
+      fileName: "noise.png",
+      dataBase64,
+      options: { force: true },
+    });
+    expect(forced.status).toBe(200);
+    const body = (await forced.json()) as {
+      project: { source: { type: string } };
+      report: { verdict: string; remedies: string[] };
+    };
+    expect(body.project.source.type).toBe("image");
+    expect(body.report.verdict).toBe("bad");
+    expect(body.report.remedies.length).toBeGreaterThan(0);
+  });
+});
+
+describe("preview modes over the local API", () => {
+  it("renders artistic by default, estimate on request, and rejects invalid modes", async () => {
+    const directory = await temporaryDirectory("git-mosaic-web-preview-");
+    const project = await initializeProject(directory, {
+      name: "web-preview",
+      period: { from: "2026-01-04", to: "2026-01-10" },
+      timezone: "UTC",
+    });
+    project.intensityMap[0]![0] = 1;
+    await writeProject(directory, project);
+    expect((await readProject(directory)).intensityMap[0]?.[0]).toBe(1);
+
+    const { baseUrl } = await startServer();
+    const token = await session(baseUrl);
+    const artistic = await post(baseUrl, token, "/api/preview/svg", {
+      path: directory,
+    });
+    expect(artistic.status).toBe(200);
+    expect(((await artistic.json()) as { svg: string }).svg).toContain(
+      'data-date="2026-01-04" data-state="in-range" data-level="1"',
+    );
+
+    const estimate = await post(baseUrl, token, "/api/preview/svg", {
+      path: directory,
+      mode: "estimate",
+    });
+    expect(estimate.status).toBe(200);
+    expect(((await estimate.json()) as { svg: string }).svg).toContain(
+      'data-date="2026-01-04" data-state="in-range" data-level="4"',
+    );
+
+    const invalid = await post(baseUrl, token, "/api/preview/svg", {
+      path: directory,
+      mode: "unknown",
+    });
+    expect(invalid.status).toBe(400);
   });
 });
