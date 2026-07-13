@@ -120,6 +120,31 @@ export function buildCalendar(
   };
 }
 
+/**
+ * The inclusive range of columns whose seven cells are all in range. Partial
+ * first/last weeks are excluded so artwork is never clipped by out-of-range
+ * cells.
+ */
+export function fullyInRangeColumnSpan(calendar: ContributionCalendar): {
+  start: number;
+  end: number;
+} {
+  const isFull = (column: number): boolean =>
+    calendar.cells.every((row) => row[column]?.inRange === true);
+  let start = 0;
+  while (start < calendar.columns && !isFull(start)) start += 1;
+  let end = calendar.columns - 1;
+  while (end >= start && !isFull(end)) end -= 1;
+  if (start > end) {
+    throw new GitMosaicError(
+      "INVALID_DATE_RANGE",
+      "The period does not contain a full Sunday-to-Saturday week",
+      { hint: "Use a period of at least one full week" },
+    );
+  }
+  return { start, end };
+}
+
 export function createEmptyIntensityMap(columns: number): IntensityMap {
   return Array.from({ length: 7 }, () => Array<Intensity>(columns).fill(0));
 }

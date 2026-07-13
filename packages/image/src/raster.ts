@@ -1,6 +1,7 @@
 import sharp from "sharp";
 
 import {
+  fullyInRangeColumnSpan,
   validateIntensityMap,
   type ContributionCalendar,
 } from "@git-mosaic/calendar";
@@ -225,10 +226,15 @@ export async function importRasterImage(
     }
 
     const fit = options.fit ?? "contain";
+    const span =
+      fit === "contain"
+        ? fullyInRangeColumnSpan(calendar)
+        : { start: 0, end: calendar.columns - 1 };
+    const targetColumns = span.end - span.start + 1;
     let pipeline = sharp(input, { failOn: "error" })
       .autoOrient()
       .flatten({ background: "white" })
-      .resize(calendar.columns, 7, {
+      .resize(targetColumns, 7, {
         fit: fit === "stretch" ? "fill" : fit,
         position: "centre",
         background: "white",
@@ -250,7 +256,7 @@ export async function importRasterImage(
       .raw()
       .toBuffer({ resolveWithObject: true });
     if (
-      info.width !== calendar.columns ||
+      info.width !== targetColumns ||
       info.height !== 7 ||
       info.channels < 1
     ) {
@@ -281,7 +287,9 @@ export async function importRasterImage(
       Array.from({ length: calendar.columns }, (_, column) => {
         const cell = calendar.cells[row]?.[column];
         if (cell?.inRange !== true) return 0;
-        const pixelIndex = row * info.width + column;
+        const localColumn = column - span.start;
+        if (localColumn < 0 || localColumn >= info.width) return 0;
+        const pixelIndex = row * info.width + localColumn;
         if (ditheredIntensities !== undefined) {
           return ditheredIntensities[pixelIndex] as Intensity;
         }
