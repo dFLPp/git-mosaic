@@ -14,6 +14,9 @@ export const errorCodes = {
   CHECKSUM_MISMATCH: "GM013",
   FUTURE_DATE_NOT_ALLOWED: "GM014",
   UNSUPPORTED_IMAGE: "GM015",
+  TEXT_DOES_NOT_FIT: "GM016",
+  UNSUPPORTED_TEXT: "GM017",
+  LOW_EXPRESSIBILITY: "GM018",
 } as const;
 
 export type ErrorName = keyof typeof errorCodes;

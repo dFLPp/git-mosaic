@@ -59,6 +59,17 @@ export const imageSourceSchema = z.object({
   fit: z.enum(["contain", "cover", "stretch"]).default("contain"),
   invert: z.boolean().default(false),
   dithering: z.boolean().default(false),
+  mode: z.enum(["levels", "binary"]).default("levels"),
+  normalize: z.boolean().default(true),
+});
+
+export const fontTierSchema = z.enum(["5x7", "4x5", "3x5"]);
+
+export const textSourceSchema = z.object({
+  type: z.literal("text"),
+  content: z.string().min(1).max(200),
+  font: fontTierSchema,
+  align: z.enum(["left", "center", "right"]).default("center"),
 });
 
 export const emptySourceSchema = z.object({ type: z.literal("empty") });
@@ -67,7 +78,26 @@ export const mosaicSourceSchema = z.discriminatedUnion("type", [
   emptySourceSchema,
   matrixSourceSchema,
   imageSourceSchema,
+  textSourceSchema,
 ]);
+
+export const fitVerdictSchema = z.enum(["good", "degraded", "bad"]);
+
+export const fitReportSchema = z.object({
+  verdict: fitVerdictSchema,
+  score: z.number().min(0).max(1),
+  signals: z.object({
+    aspectEfficiency: z.number().min(0).max(1).optional(),
+    edgeSurvival: z.number().min(0).max(1).optional(),
+    toneSeparability: z.number().min(0).max(1).optional(),
+    fontTier: fontTierSchema.optional(),
+    columnsUsed: z.number().int().nonnegative().optional(),
+    columnsAvailable: z.number().int().positive().optional(),
+  }),
+  survives: z.array(z.string()),
+  lost: z.array(z.string()),
+  remedies: z.array(z.string()),
+});
 
 export const contributionLevelSchema = z.enum([
   "NONE",
@@ -258,6 +288,10 @@ export type DateRange = z.infer<typeof dateRangeSchema>;
 export type Intensity = z.infer<typeof intensitySchema>;
 export type IntensityMap = z.infer<typeof intensityMapSchema>;
 export type CommitLevelMap = z.infer<typeof commitLevelMapSchema>;
+export type FontTier = z.infer<typeof fontTierSchema>;
+export type FitVerdict = z.infer<typeof fitVerdictSchema>;
+export type FitReport = z.infer<typeof fitReportSchema>;
+export type TextSource = z.infer<typeof textSourceSchema>;
 export type MosaicSource = z.infer<typeof mosaicSourceSchema>;
 export type ContributionLevel = z.infer<typeof contributionLevelSchema>;
 export type Confidence = z.infer<typeof confidenceSchema>;
