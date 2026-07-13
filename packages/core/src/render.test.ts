@@ -24,17 +24,29 @@ describe("project preview rendering", () => {
       timezone: "UTC",
       now: "2026-01-01T00:00:00.000Z",
     });
-    project.intensityMap[0]![0] = 4;
+    project.intensityMap[0]![0] = 1;
     await writeProject(root, project);
 
     const terminal = await renderProjectTerminal(root, { color: false });
+    const estimatedTerminal = await renderProjectTerminal(
+      root,
+      { color: false, showLegend: false },
+      "estimate",
+    );
     const firstSvg = await renderProjectSvg(root, { theme: "light" });
     const secondSvg = await renderProjectSvg(root, { theme: "light" });
     expect(terminal).toContain(
       "Warning: GitHub contribution levels and colors are estimates.",
     );
-    expect(terminal).toContain("█");
+    expect(terminal).toContain("░");
+    expect(estimatedTerminal).toContain("█");
     expect(firstSvg).toBe(secondSvg);
     expect(firstSvg).toContain("<svg");
+    expect(firstSvg).toContain(
+      'data-date="2026-01-04" data-state="in-range" data-level="1"',
+    );
+    expect(await renderProjectSvg(root, {}, "estimate")).toContain(
+      'data-date="2026-01-04" data-state="in-range" data-level="4"',
+    );
   });
 });

@@ -4,6 +4,30 @@ export interface ContributionLevelStrategy {
   calculate(days: CalendarCell[]): CalendarCell[];
 }
 
+const LEVEL_BY_INTENSITY = [
+  "NONE",
+  "FIRST_QUARTILE",
+  "SECOND_QUARTILE",
+  "THIRD_QUARTILE",
+  "FOURTH_QUARTILE",
+] as const;
+
+/**
+ * WYSIWYG strategy: the preview level is exactly the drawn intensity. This is
+ * what the artist meant; the quartile strategy remains the GitHub estimate.
+ */
+export class ArtisticIntensityStrategy implements ContributionLevelStrategy {
+  calculate(days: CalendarCell[]): CalendarCell[] {
+    return days.map((day) => ({
+      ...day,
+      level:
+        day.inRange && day.intensity > 0
+          ? LEVEL_BY_INTENSITY[day.intensity]
+          : "NONE",
+    }));
+  }
+}
+
 function levelForPercentile(percentile: number): CalendarCell["level"] {
   if (percentile <= 0.25) return "FIRST_QUARTILE";
   if (percentile <= 0.5) return "SECOND_QUARTILE";

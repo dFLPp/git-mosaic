@@ -1,7 +1,7 @@
 import {
   applyIntensityMap,
+  ArtisticIntensityStrategy,
   buildCalendar,
-  QuartileApproximationStrategy,
   type ContributionCalendar,
   type ContributionLevelStrategy,
 } from "@git-mosaic/calendar";
@@ -9,7 +9,7 @@ import type { MosaicProject } from "@git-mosaic/schemas";
 
 export function buildPreviewCalendar(
   project: MosaicProject,
-  strategy: ContributionLevelStrategy = new QuartileApproximationStrategy(),
+  strategy: ContributionLevelStrategy = new ArtisticIntensityStrategy(),
 ): ContributionCalendar {
   const calendar = applyIntensityMap(
     buildCalendar(project.period, project.timezone),

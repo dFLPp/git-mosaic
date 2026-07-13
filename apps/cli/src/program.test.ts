@@ -118,7 +118,30 @@ describe("CLI contract", () => {
       "--theme",
       "light",
     ]);
-    expect(await readFile(svgPath, "utf8")).toContain("<svg");
+    const artisticSvg = await readFile(svgPath, "utf8");
+    expect(artisticSvg).toContain("<svg");
+    expect(artisticSvg).toContain(
+      'data-date="2026-01-01" data-state="in-range" data-level="1"',
+    );
+
+    const estimateSvgPath = path.join(
+      target,
+      "exports",
+      "preview-estimate.svg",
+    );
+    await createProgram().parseAsync([
+      "node",
+      "git-mosaic",
+      "preview",
+      "--project",
+      target,
+      "--output",
+      estimateSvgPath,
+      "--estimate",
+    ]);
+    expect(await readFile(estimateSvgPath, "utf8")).toContain(
+      'data-date="2026-01-01" data-state="in-range" data-level="4"',
+    );
 
     const planPath = path.join(target, "plans", "cli-plan.json");
     await createProgram().parseAsync([

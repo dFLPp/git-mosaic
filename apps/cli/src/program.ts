@@ -240,6 +240,10 @@ export function createProgram(): Command {
     .option("--no-color", "disable ANSI colors in terminal output")
     .option("--cell-size <number>", "cell size", Number)
     .option("--cell-gap <number>", "cell gap", Number)
+    .option(
+      "--estimate",
+      "rank levels like GitHub's quartile estimate instead of showing drawn intensities",
+    )
     .action(
       async (options: {
         project: string;
@@ -251,6 +255,7 @@ export function createProgram(): Command {
         color: boolean;
         cellSize?: number;
         cellGap?: number;
+        estimate?: boolean;
       }) => {
         const renderOptions = {
           theme: options.theme,
@@ -271,6 +276,7 @@ export function createProgram(): Command {
             await renderProjectSvg(
               path.resolve(options.project),
               renderOptions,
+              options.estimate === true ? "estimate" : "artistic",
             ),
           );
           writeOutput(program, `Wrote SVG preview to ${output}\n`);
@@ -278,10 +284,14 @@ export function createProgram(): Command {
         }
         writeOutput(
           program,
-          await renderProjectTerminal(path.resolve(options.project), {
-            ...renderOptions,
-            color: options.color && process.stdout.isTTY === true,
-          }),
+          await renderProjectTerminal(
+            path.resolve(options.project),
+            {
+              ...renderOptions,
+              color: options.color && process.stdout.isTTY === true,
+            },
+            options.estimate === true ? "estimate" : "artistic",
+          ),
         );
       },
     );

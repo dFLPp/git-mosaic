@@ -1,6 +1,11 @@
 import { mkdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
+  ArtisticIntensityStrategy,
+  QuartileApproximationStrategy,
+  type ContributionLevelStrategy,
+} from "@git-mosaic/calendar";
+import {
   renderSvg,
   renderTerminal,
   type SvgRenderOptions,
@@ -9,20 +14,33 @@ import {
 import { readProject } from "./project.js";
 import { buildPreviewCalendar } from "./preview.js";
 
+export type PreviewMode = "artistic" | "estimate";
+
+function strategyFor(mode: PreviewMode): ContributionLevelStrategy {
+  return mode === "estimate"
+    ? new QuartileApproximationStrategy()
+    : new ArtisticIntensityStrategy();
+}
+
 export async function renderProjectTerminal(
   projectDirectory: string,
   options: TerminalRenderOptions = {},
+  mode: PreviewMode = "artistic",
 ): Promise<string> {
   const project = await readProject(projectDirectory);
-  return renderTerminal(buildPreviewCalendar(project), options).content;
+  return renderTerminal(
+    buildPreviewCalendar(project, strategyFor(mode)),
+    options,
+  ).content;
 }
 
 export async function renderProjectSvg(
   projectDirectory: string,
   options: SvgRenderOptions = {},
+  mode: PreviewMode = "artistic",
 ): Promise<string> {
   const project = await readProject(projectDirectory);
-  return renderSvg(buildPreviewCalendar(project), options);
+  return renderSvg(buildPreviewCalendar(project, strategyFor(mode)), options);
 }
 
 export async function writePreview(
