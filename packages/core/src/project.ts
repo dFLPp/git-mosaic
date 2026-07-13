@@ -13,11 +13,16 @@ import {
   createEmptyIntensityMap,
   validateIntensityMap,
 } from "@git-mosaic/calendar";
-import { importRasterImage, type RasterImportOptions } from "@git-mosaic/image";
+import {
+  analyzeExpressibility,
+  importRasterImage,
+  type RasterImportOptions,
+} from "@git-mosaic/image";
 import {
   intensityMapSchema,
   mosaicProjectSchema,
   type DateRange,
+  type FitReport,
   type IntensityMap,
   type MosaicProject,
 } from "@git-mosaic/schemas";
@@ -210,16 +215,59 @@ export async function importMatrix(
   return updated;
 }
 
+export interface ImageImportOptions extends RasterImportOptions {
+  /** Import even when the expressibility verdict is `bad`. */
+  force?: boolean;
+}
+
+export interface ImageImportResult {
+  project: MosaicProject;
+  report: FitReport;
+}
+
+function withCoreImageDefaults(
+  options: ImageImportOptions,
+): RasterImportOptions {
+  const { force: _force, ...raster } = options;
+  return { normalize: true, ...raster };
+}
+
+function assertExpressible(report: FitReport, force: boolean): void {
+  if (report.verdict === "bad" && !force) {
+    throw new GitMosaicError(
+      "LOW_EXPRESSIBILITY",
+      "The image will not survive the contribution grid",
+      {
+        hint:
+          report.remedies.length > 0
+            ? `${report.remedies.join("; ")} (or pass force to import anyway)`
+            : "Pass force to import anyway",
+      },
+    );
+  }
+}
+
 export async function importImage(
   projectDirectory: string,
   imageFile: string,
-  options: RasterImportOptions = {},
+  options: ImageImportOptions = {},
   now = new Date().toISOString(),
-): Promise<MosaicProject> {
+): Promise<ImageImportResult> {
   const project = await readProject(projectDirectory);
   const calendar = buildCalendar(project.period, project.timezone);
   const sourcePath = path.resolve(imageFile);
-  const intensityMap = await importRasterImage(sourcePath, calendar, options);
+  const rasterOptions = withCoreImageDefaults(options);
+  const report = await analyzeExpressibility(
+    sourcePath,
+    calendar,
+    rasterOptions,
+  );
+  assertExpressible(report, options.force === true);
+  const intensityMap = await importRasterImage(
+    sourcePath,
+    calendar,
+    rasterOptions,
+  );
   const extension = path.extname(sourcePath).toLowerCase();
   const relativeAssetPath = path.join("assets", `source${extension}`);
   const assetPath = path.join(
@@ -236,23 +284,25 @@ export async function importImage(
     source: {
       type: "image",
       path: relativeAssetPath.split(path.sep).join("/"),
-      fit: options.fit ?? "contain",
-      invert: options.invert ?? false,
-      dithering: false,
+      fit: rasterOptions.fit ?? "contain",
+      invert: rasterOptions.invert ?? false,
+      dithering: rasterOptions.dithering ?? false,
+      mode: rasterOptions.mode ?? "levels",
+      normalize: rasterOptions.normalize ?? true,
     },
     intensityMap,
   });
   await writeProject(projectDirectory, updated);
-  return updated;
+  return { project: updated, report };
 }
 
 export async function importImageBuffer(
   projectDirectory: string,
   fileName: string,
   buffer: Buffer,
-  options: RasterImportOptions = {},
+  options: ImageImportOptions = {},
   now = new Date().toISOString(),
-): Promise<MosaicProject> {
+): Promise<ImageImportResult> {
   const extension = path.extname(path.basename(fileName)).toLowerCase();
   if (![".png", ".jpg", ".jpeg", ".webp"].includes(extension)) {
     throw new GitMosaicError(
@@ -262,7 +312,10 @@ export async function importImageBuffer(
   }
   const project = await readProject(projectDirectory);
   const calendar = buildCalendar(project.period, project.timezone);
-  const intensityMap = await importRasterImage(buffer, calendar, options);
+  const rasterOptions = withCoreImageDefaults(options);
+  const report = await analyzeExpressibility(buffer, calendar, rasterOptions);
+  assertExpressible(report, options.force === true);
+  const intensityMap = await importRasterImage(buffer, calendar, rasterOptions);
   const relativeAssetPath = path.join("assets", `source${extension}`);
   const assetPath = path.join(
     path.resolve(projectDirectory),
@@ -277,12 +330,14 @@ export async function importImageBuffer(
     source: {
       type: "image",
       path: relativeAssetPath.split(path.sep).join("/"),
-      fit: options.fit ?? "contain",
-      invert: options.invert ?? false,
-      dithering: false,
+      fit: rasterOptions.fit ?? "contain",
+      invert: rasterOptions.invert ?? false,
+      dithering: rasterOptions.dithering ?? false,
+      mode: rasterOptions.mode ?? "levels",
+      normalize: rasterOptions.normalize ?? true,
     },
     intensityMap,
   });
   await writeProject(projectDirectory, updated);
-  return updated;
+  return { project: updated, report };
 }

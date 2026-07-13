@@ -110,7 +110,7 @@ describe("mosaic projects", () => {
       ),
     );
 
-    const imported = await importImage(
+    const { project: imported } = await importImage(
       projectDirectory,
       source,
       { fit: "contain" },
