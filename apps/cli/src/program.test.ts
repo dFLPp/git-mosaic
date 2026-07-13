@@ -1,10 +1,46 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cliVersion, createProgram } from "./program.js";
 
 const temporaryDirectories: string[] = [];
+
+async function cliProject(year: string): Promise<string> {
+  const root = await mkdtemp(path.join(tmpdir(), "git-mosaic-fit-"));
+  temporaryDirectories.push(root);
+  const target = path.join(root, "fit-project");
+  await createProgram().parseAsync([
+    "node",
+    "git-mosaic",
+    "init",
+    "fit-project",
+    "--directory",
+    target,
+    "--year",
+    year,
+    "--timezone",
+    "UTC",
+  ]);
+  return target;
+}
+
+/** Deterministic per-pixel noise: detail far below one calendar cell. */
+async function writeNoisePng(filePath: string): Promise<string> {
+  const width = 520;
+  const height = 70;
+  const pixels = new Uint8Array(width * height);
+  let state = 42;
+  for (let index = 0; index < pixels.length; index += 1) {
+    state = (state * 1103515245 + 12345) % 2147483648;
+    pixels[index] = state % 2 === 0 ? 0 : 255;
+  }
+  await sharp(pixels, { raw: { width, height, channels: 1 } })
+    .png()
+    .toFile(filePath);
+  return filePath;
+}
 
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -284,5 +320,98 @@ describe("CLI contract", () => {
     expect(projectText).toContain("SECOND_QUARTILE");
     expect(snapshotText).toContain("octocat");
     expect(`${projectText}${snapshotText}`).not.toContain("cli-secret-token");
+  });
+});
+
+describe("import text", () => {
+  it("imports text, prints the fit report, and previews it", async () => {
+    const target = await cliProject("2025");
+    const stdout = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+
+    await createProgram().parseAsync([
+      "node",
+      "git-mosaic",
+      "import",
+      "text",
+      "Loading...",
+      "--project",
+      target,
+    ]);
+
+    const output = stdout.mock.calls.map((call) => String(call[0])).join("");
+    expect(output).toContain("Imported text into fit-project");
+    expect(output).toContain("Fit: GOOD");
+    expect(output).toContain("Legend:");
+
+    const project = JSON.parse(
+      await readFile(path.join(target, "mosaic.json"), "utf8"),
+    ) as { source: Record<string, unknown> };
+    expect(project.source).toEqual({
+      type: "text",
+      content: "Loading...",
+      font: "5x7",
+      align: "center",
+    });
+  });
+
+  it("refuses text that cannot fit at the smallest legible font", async () => {
+    const target = await cliProject("2025");
+    await expect(
+      createProgram().parseAsync([
+        "node",
+        "git-mosaic",
+        "import",
+        "text",
+        "lorem ipsum dolor".repeat(5),
+        "--project",
+        target,
+      ]),
+    ).rejects.toMatchObject({ code: "GM016" });
+
+    const project = JSON.parse(
+      await readFile(path.join(target, "mosaic.json"), "utf8"),
+    ) as { source: { type: string } };
+    expect(project.source.type).toBe("empty");
+  });
+});
+
+describe("import image fit gate", () => {
+  it("rejects low-expressibility images and accepts them with --force", async () => {
+    const target = await cliProject("2025");
+    const noisePath = await writeNoisePng(
+      path.join(path.dirname(target), "noise.png"),
+    );
+
+    await expect(
+      createProgram().parseAsync([
+        "node",
+        "git-mosaic",
+        "import",
+        "image",
+        noisePath,
+        "--project",
+        target,
+      ]),
+    ).rejects.toMatchObject({ code: "GM018" });
+
+    const stdout = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
+    await createProgram().parseAsync([
+      "node",
+      "git-mosaic",
+      "import",
+      "image",
+      noisePath,
+      "--project",
+      target,
+      "--force",
+    ]);
+    const output = stdout.mock.calls.map((call) => String(call[0])).join("");
+    expect(output).toContain("Imported image into fit-project");
+    expect(output).toContain("Fit: BAD");
+    expect(output).toContain("Try:");
   });
 });

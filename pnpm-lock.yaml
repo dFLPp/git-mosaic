@@ -53,6 +53,10 @@ importers:
       commander:
         specifier: ^13.1.0
         version: 13.1.0
+    devDependencies:
+      sharp:
+        specifier: ^0.34.1
+        version: 0.34.5
 
   apps/web:
     dependencies:

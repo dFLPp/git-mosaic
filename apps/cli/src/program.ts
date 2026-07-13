@@ -11,6 +11,7 @@ import {
   importGitHubContributions,
   importImage,
   importMatrix,
+  importText,
   initializeProject,
   readCommitPlan,
   readProject,
@@ -21,7 +22,7 @@ import {
 } from "@git-mosaic/core";
 import { applyCommitPlan } from "@git-mosaic/git";
 import { GitHubGraphQLProvider } from "@git-mosaic/github";
-import type { CommitLevelMap, DateRange } from "@git-mosaic/schemas";
+import type { CommitLevelMap, DateRange, FitReport } from "@git-mosaic/schemas";
 import { Command, InvalidArgumentError, Option } from "commander";
 
 export const cliVersion = "0.1.0";
@@ -131,6 +132,18 @@ function writeOutput(program: Command, message: string): void {
   }
 }
 
+function formatFitReport(report: FitReport): string {
+  const lines = [
+    `Fit: ${report.verdict.toUpperCase()} (score ${report.score.toFixed(2)})`,
+  ];
+  if (report.survives.length > 0)
+    lines.push(`Survives: ${report.survives.join("; ")}`);
+  if (report.lost.length > 0) lines.push(`Lost: ${report.lost.join("; ")}`);
+  if (report.remedies.length > 0)
+    lines.push(`Try: ${report.remedies.join("; ")}`);
+  return `${lines.join("\n")}\n`;
+}
+
 export function createProgram(): Command {
   const program = new Command();
 
@@ -174,7 +187,7 @@ export function createProgram(): Command {
 
   const importCommand = program
     .command("import")
-    .description("import an image or intensity matrix");
+    .description("import an image, text, or intensity matrix");
   importCommand
     .command("matrix")
     .description("import a JSON intensity matrix")
@@ -197,30 +210,91 @@ export function createProgram(): Command {
         .choices(["contain", "cover", "stretch"])
         .default("contain"),
     )
+    .addOption(
+      new Option("--mode <mode>", "quantization mode")
+        .choices(["levels", "binary"])
+        .default("levels"),
+    )
     .option("--invert", "invert intensity levels")
     .option("--contrast <multiplier>", "contrast multiplier", Number)
+    .option(
+      "--no-normalize",
+      "keep the original histogram instead of stretching it",
+    )
+    .option("--dither", "diffuse quantization error for smooth gradients")
+    .option("--force", "import even when the fit verdict is bad")
     .action(
       async (
         input: string,
         options: {
           project: string;
           fit: "contain" | "cover" | "stretch";
+          mode: "levels" | "binary";
           invert?: boolean;
           contrast?: number;
+          normalize: boolean;
+          dither?: boolean;
+          force?: boolean;
         },
       ) => {
-        const project = await importImage(
-          path.resolve(options.project),
+        const projectDirectory = path.resolve(options.project);
+        const { project, report } = await importImage(
+          projectDirectory,
           path.resolve(input),
           {
             fit: options.fit,
+            mode: options.mode,
             invert: options.invert ?? false,
+            normalize: options.normalize,
+            dithering: options.dither ?? false,
+            force: options.force ?? false,
             ...(options.contrast === undefined
               ? {}
               : { contrast: options.contrast }),
           },
         );
         writeOutput(program, `Imported image into ${project.name}\n`);
+        writeOutput(program, formatFitReport(report));
+        writeOutput(
+          program,
+          await renderProjectTerminal(projectDirectory, {
+            color: process.stdout.isTTY === true,
+          }),
+        );
+      },
+    );
+  importCommand
+    .command("text")
+    .description("render text onto the calendar with a built-in pixel font")
+    .argument("<content>", "text to render (A-Z, 0-9, space, . ! ? - :)")
+    .requiredOption("--project <path>", "mosaic project directory")
+    .addOption(
+      new Option("--align <align>", "horizontal alignment")
+        .choices(["left", "center", "right"])
+        .default("center"),
+    )
+    .action(
+      async (
+        content: string,
+        options: {
+          project: string;
+          align: "left" | "center" | "right";
+        },
+      ) => {
+        const projectDirectory = path.resolve(options.project);
+        const { project, report } = await importText(
+          projectDirectory,
+          content,
+          { align: options.align },
+        );
+        writeOutput(program, `Imported text into ${project.name}\n`);
+        writeOutput(program, formatFitReport(report));
+        writeOutput(
+          program,
+          await renderProjectTerminal(projectDirectory, {
+            color: process.stdout.isTTY === true,
+          }),
+        );
       },
     );
 
