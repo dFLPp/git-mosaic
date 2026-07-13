@@ -12,6 +12,7 @@ import {
 
 export type RasterInput = string | Buffer;
 export type RasterFit = "contain" | "cover" | "stretch";
+export type RasterMode = "levels" | "binary";
 
 export interface RasterImportOptions {
   /** How the source is fitted to the calendar's columns by seven rows. */
@@ -24,6 +25,13 @@ export interface RasterImportOptions {
    * decrease it.
    */
   contrast?: number;
+  /**
+   * Quantization mode. `"levels"` maps luminance to all five intensities;
+   * `"binary"` thresholds at middle gray to 0 or 4 for line art and text.
+   */
+  mode?: RasterMode;
+  /** Stretch the grayscale histogram to full range before quantizing. */
+  normalize?: boolean;
 }
 
 export interface RasterDebugResult {
@@ -34,6 +42,9 @@ export interface RasterDebugResult {
 }
 
 const supportedFormats = new Set(["jpeg", "png", "webp"]);
+
+/** Representative luminance for each intensity, index 0..4. */
+export const LUMINANCE_BY_INTENSITY = [255, 191, 128, 64, 0] as const;
 
 function invalidCalendar(message: string, cause?: unknown): GitMosaicError {
   return new GitMosaicError("INVALID_INTENSITY_MAP", message, {
@@ -81,6 +92,11 @@ function quantize(luminance: number, invert: boolean): Intensity {
   return (invert ? 4 - intensity : intensity) as Intensity;
 }
 
+function quantizeBinary(luminance: number, invert: boolean): Intensity {
+  const intensity: Intensity = luminance < 128 ? 4 : 0;
+  return (invert ? 4 - intensity : intensity) as Intensity;
+}
+
 function imageError(input: RasterInput, cause: unknown): GitMosaicError {
   const description = typeof input === "string" ? input : "image buffer";
   return new GitMosaicError(
@@ -105,7 +121,8 @@ export async function quantizeRasterForDebug(
       metadata.format === undefined ||
       !supportedFormats.has(metadata.format)
     ) {
-      throw new Error(
+      throw imageError(
+        input,
         `Unsupported image format: ${metadata.format ?? "unknown"}`,
       );
     }
@@ -113,6 +130,9 @@ export async function quantizeRasterForDebug(
       .autoOrient()
       .flatten({ background: "white" })
       .grayscale();
+    if (options.normalize === true) {
+      pipeline = pipeline.normalize();
+    }
     if (options.contrast !== undefined && options.contrast !== 1) {
       pipeline = pipeline.linear(
         options.contrast,
@@ -123,11 +143,13 @@ export async function quantizeRasterForDebug(
       .raw()
       .toBuffer({ resolveWithObject: true });
     const intensities = new Uint8Array(info.width * info.height);
+    const quantizePixel =
+      options.mode === "binary"
+        ? (luminance: number) =>
+            quantizeBinary(luminance, options.invert ?? false)
+        : (luminance: number) => quantize(luminance, options.invert ?? false);
     for (let index = 0; index < intensities.length; index += 1) {
-      intensities[index] = quantize(
-        data[index * info.channels] ?? 255,
-        options.invert ?? false,
-      );
+      intensities[index] = quantizePixel(data[index * info.channels] ?? 255);
     }
     return { width: info.width, height: info.height, intensities };
   } catch (cause) {
@@ -155,7 +177,8 @@ export async function importRasterImage(
       metadata.format === undefined ||
       !supportedFormats.has(metadata.format)
     ) {
-      throw new Error(
+      throw imageError(
+        input,
         `Unsupported image format: ${metadata.format ?? "unknown"}`,
       );
     }
@@ -170,6 +193,10 @@ export async function importRasterImage(
         background: "white",
       })
       .grayscale();
+
+    if (options.normalize === true) {
+      pipeline = pipeline.normalize();
+    }
 
     if (options.contrast !== undefined && options.contrast !== 1) {
       pipeline = pipeline.linear(
@@ -186,15 +213,21 @@ export async function importRasterImage(
       info.height !== 7 ||
       info.channels < 1
     ) {
-      throw new Error("Raster pipeline returned unexpected dimensions");
+      throw imageError(input, "Raster pipeline returned unexpected dimensions");
     }
+
+    const quantizePixel =
+      options.mode === "binary"
+        ? (luminance: number) =>
+            quantizeBinary(luminance, options.invert ?? false)
+        : (luminance: number) => quantize(luminance, options.invert ?? false);
 
     const map: IntensityMap = Array.from({ length: 7 }, (_, row) =>
       Array.from({ length: calendar.columns }, (_, column) => {
         const cell = calendar.cells[row]?.[column];
         if (cell?.inRange !== true) return 0;
         const offset = (row * calendar.columns + column) * info.channels;
-        return quantize(data[offset] ?? 255, options.invert ?? false);
+        return quantizePixel(data[offset] ?? 255);
       }),
     );
 
