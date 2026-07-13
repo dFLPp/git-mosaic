@@ -229,7 +229,8 @@ export interface ImageImportResult {
 function withCoreImageDefaults(
   options: ImageImportOptions,
 ): RasterImportOptions {
-  const { force: _force, ...raster } = options;
+  const raster = { ...options };
+  delete raster.force;
   return { normalize: true, ...raster };
 }
 
