@@ -32,6 +32,8 @@ export interface RasterImportOptions {
   mode?: RasterMode;
   /** Stretch the grayscale histogram to full range before quantizing. */
   normalize?: boolean;
+  /** Diffuse quantization error (Floyd–Steinberg); levels mode only. */
+  dithering?: boolean;
 }
 
 export interface RasterDebugResult {
@@ -95,6 +97,45 @@ function quantize(luminance: number, invert: boolean): Intensity {
 function quantizeBinary(luminance: number, invert: boolean): Intensity {
   const intensity: Intensity = luminance < 128 ? 4 : 0;
   return (invert ? 4 - intensity : intensity) as Intensity;
+}
+
+function nearestIntensity(luminance: number): Intensity {
+  let best: Intensity = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (let level = 0; level <= 4; level += 1) {
+    const distance = Math.abs(luminance - LUMINANCE_BY_INTENSITY[level]!);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = level as Intensity;
+    }
+  }
+  return best;
+}
+
+/** Floyd–Steinberg error diffusion onto the 0..4 intensity scale. */
+function ditherToIntensities(
+  luminance: Float64Array,
+  width: number,
+  height: number,
+  invert: boolean,
+): Uint8Array {
+  const out = new Uint8Array(width * height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = y * width + x;
+      const value = luminance[index] ?? 255;
+      const intensity = nearestIntensity(value);
+      out[index] = invert ? 4 - intensity : intensity;
+      const error = value - LUMINANCE_BY_INTENSITY[intensity]!;
+      if (x + 1 < width) luminance[index + 1]! += (error * 7) / 16;
+      if (y + 1 < height) {
+        if (x > 0) luminance[index + width - 1]! += (error * 3) / 16;
+        luminance[index + width]! += (error * 5) / 16;
+        if (x + 1 < width) luminance[index + width + 1]! += (error * 1) / 16;
+      }
+    }
+  }
+  return out;
 }
 
 function imageError(input: RasterInput, cause: unknown): GitMosaicError {
@@ -216,6 +257,20 @@ export async function importRasterImage(
       throw imageError(input, "Raster pipeline returned unexpected dimensions");
     }
 
+    let ditheredIntensities: Uint8Array | undefined;
+    if (options.dithering === true && options.mode !== "binary") {
+      const luminance = new Float64Array(info.width * info.height);
+      for (let index = 0; index < luminance.length; index += 1) {
+        luminance[index] = data[index * info.channels] ?? 255;
+      }
+      ditheredIntensities = ditherToIntensities(
+        luminance,
+        info.width,
+        info.height,
+        options.invert ?? false,
+      );
+    }
+
     const quantizePixel =
       options.mode === "binary"
         ? (luminance: number) =>
@@ -226,7 +281,11 @@ export async function importRasterImage(
       Array.from({ length: calendar.columns }, (_, column) => {
         const cell = calendar.cells[row]?.[column];
         if (cell?.inRange !== true) return 0;
-        const offset = (row * calendar.columns + column) * info.channels;
+        const pixelIndex = row * info.width + column;
+        if (ditheredIntensities !== undefined) {
+          return ditheredIntensities[pixelIndex] as Intensity;
+        }
+        const offset = pixelIndex * info.channels;
         return quantizePixel(data[offset] ?? 255);
       }),
     );
