@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="140" viewBox="0 0 51 7" role="img" aria-labelledby="title description">
+  <title id="title">Kaiju attack contribution mosaic</title>
+  <desc id="description">A 51 by 7 boss scene with a giant spiked monster firing an energy beam through a city skyline.</desc>
+  <defs><pattern id="cells" width="1" height="1" patternUnits="userSpaceOnUse"><rect x=".08" y=".08" width=".84" height=".84" rx=".16" fill="#fff" /></pattern><mask id="grid"><rect width="51" height="7" fill="url(#cells)" /></mask></defs>
+  <rect width="51" height="7" fill="#0d1117" />
+  <g mask="url(#grid)">
+    <rect width="51" height="7" fill="#161b22" />
+    <path fill="#0e4429" d="M10 1h2v1H10z M13 1h2v1H13z M16 1h2v1H16z M19 1h2v1H19z M8 2h11v1H8z M22 2h2v1H22z M5 3h16v1H5z M22 3h1v1H22z M2 4h6v1H2z M9 4h12v1H9z M37 4h3v1H37z M44 4h3v1H44z M0 5h5v1H0z M10 5h10v1H10z M38 5h3v1H38z M44 5h3v1H44z M49 5h2v1H49z M0 6h6v1H0z M11 6h8v1H11z M23 6h11v1H23z M39 6h1v1H39z M46 6h1v1H46z M50 6h1v1H50z" />
+    <path fill="#006d32" d="M12 0h1v1H12z M15 0h1v1H15z M18 0h1v1H18z M34 0h1v1H34z M36 0h1v1H36z M12 1h1v1H12z M15 1h1v1H15z M18 1h1v1H18z M21 1h1v1H21z M34 1h1v1H34z M36 1h1v1H36z M19 2h3v1H19z M24 2h1v1H24z M21 3h1v1H21z M23 3h1v1H23z M37 3h2v1H37z M44 3h3v1H44z M8 4h1v1H8z M21 4h1v1H21z M35 4h2v1H35z M42 4h2v1H42z M47 4h2v1H47z M8 5h2v1H8z M20 5h2v1H20z M36 5h2v1H36z M41 5h3v1H41z M47 5h2v1H47z M6 6h4v1H6z M20 6h3v1H20z M34 6h3v1H34z M40 6h3v1H40z M47 6h3v1H47z" />
+    <path fill="#26a641" d="M35 0h1v1H35z M35 1h1v1H35z M24 3h2v1H24z M22 4h1v1H22z M10 6h1v1H10z M19 6h1v1H19z M37 6h2v1H37z M43 6h3v1H43z" />
+    <path fill="#39d353" d="M25 2h1v1H25z M28 2h1v1H28z M31 2h1v1H31z M34 2h1v1H34z M27 3h1v1H27z M30 3h1v1H30z M33 3h1v1H33z M36 3h1v1H36z" />
+  </g>
+</svg>

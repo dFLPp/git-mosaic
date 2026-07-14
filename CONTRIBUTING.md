@@ -43,7 +43,6 @@ testing the CLI manually.
 - `apps/cli`: public command-line interface
 - `packages/schemas`: persisted schemas, shared types, and error codes
 - `packages/calendar`: date/cell mapping and contribution-level estimates
-- `packages/image`: raster import
 - `packages/renderer`: terminal and SVG renderers
 - `packages/github`: GraphQL provider and snapshots
 - `packages/core`: project, preview, import, and planning orchestration

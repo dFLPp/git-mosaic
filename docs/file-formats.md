@@ -10,13 +10,11 @@ validated on read. Unknown future schema versions are not silently accepted.
 ```text
 art/
 ├── mosaic.json
-├── assets/
 ├── exports/
 └── plans/
 ```
 
-Image import copies the source to `assets/source.<extension>`. SVG previews are
-usually placed under `exports/`, and the default plan path is
+SVG previews are usually placed under `exports/`, and the default plan path is
 `plans/latest.json`.
 
 ## `mosaic.json`
@@ -50,15 +48,6 @@ zero. `weekStartsOn` is currently always `0` (Sunday).
 { "type": "empty" }
 { "type": "matrix", "path": "../input.json" }
 {
-  "type": "image",
-  "path": "assets/source.png",
-  "fit": "contain",
-  "invert": false,
-  "dithering": false,
-  "mode": "levels",
-  "normalize": true
-}
-{
   "type": "text",
   "content": "Loading...",
   "font": "5x7",
@@ -66,16 +55,13 @@ zero. `weekStartsOn` is currently always `0` (Sunday).
 }
 ```
 
-Image `mode` is either `levels` (five shades) or `binary` (only intensities 0
-and 4). `normalize` stretches the grayscale histogram before quantization, and
-`dithering` enables deterministic Floyd–Steinberg error diffusion in `levels`
-mode. Text `font` records the selected `5x7`, `4x5`, or `3x5` tier; `align` is
-`left`, `center`, or `right`. Text import writes no asset file.
+Text `font` records the selected `5x7`, `4x5`, or `3x5` tier; `align` is `left`,
+`center`, or `right`.
 
 ## Import fit reports
 
-Image and text imports return a fit report alongside the updated project. The
-report is an API/command result and is not stored in `mosaic.json`:
+Text imports return a fit report alongside the updated project. The report is
+an API/command result and is not stored in `mosaic.json`:
 
 ```json
 {
@@ -92,10 +78,7 @@ report is an API/command result and is not stored in `mosaic.json`:
 }
 ```
 
-`verdict` is `good`, `degraded`, or `bad`, and `score` is in `0..1`. Image
-reports instead provide `aspectEfficiency`, `edgeSurvival`, and
-`toneSeparability` signals. A `bad` image is rejected before project or asset
-files are changed unless the caller explicitly sets `force`.
+`verdict` is `good` or `degraded`, and `score` is in `0..1`.
 
 An optional `existingContributions` contains the validated GitHub snapshot. An
 optional free-form `metadata` object is reserved for non-domain metadata.

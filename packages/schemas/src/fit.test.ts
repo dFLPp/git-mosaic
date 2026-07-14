@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   errorCodes,
   fitReportSchema,
-  imageSourceSchema,
   mosaicSourceSchema,
   textSourceSchema,
 } from "./index.js";
@@ -14,9 +13,9 @@ describe("fit report schema", () => {
       verdict: "degraded",
       score: 0.42,
       signals: {
-        aspectEfficiency: 0.9,
-        edgeSurvival: 0.4,
-        toneSeparability: 0.7,
+        fontTier: "3x5",
+        columnsUsed: 49,
+        columnsAvailable: 51,
       },
       survives: ["large shapes and strong edges"],
       lost: ["fine detail smaller than one week/day cell"],
@@ -54,14 +53,13 @@ describe("fit report schema", () => {
 });
 
 describe("source schemas", () => {
-  it("defaults new image source fields", () => {
-    const source = imageSourceSchema.parse({
-      type: "image",
-      path: "assets/source.png",
-    });
-    expect(source.mode).toBe("levels");
-    expect(source.normalize).toBe(true);
-    expect(source.dithering).toBe(false);
+  it("rejects the removed image source type", () => {
+    expect(() =>
+      mosaicSourceSchema.parse({
+        type: "image",
+        path: "assets/source.png",
+      }),
+    ).toThrow();
   });
 
   it("accepts a text source through the union", () => {
@@ -96,6 +94,5 @@ describe("new error codes", () => {
   it("registers fit-engine error codes", () => {
     expect(errorCodes.TEXT_DOES_NOT_FIT).toBe("GM016");
     expect(errorCodes.UNSUPPORTED_TEXT).toBe("GM017");
-    expect(errorCodes.LOW_EXPRESSIBILITY).toBe("GM018");
   });
 });

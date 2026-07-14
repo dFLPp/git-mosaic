@@ -2,12 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  importImage,
-  importMatrix,
-  initializeProject,
-  readProject,
-} from "./project.js";
+import { importMatrix, initializeProject, readProject } from "./project.js";
 
 const temporaryDirectories: string[] = [];
 
@@ -90,38 +85,5 @@ describe("mosaic projects", () => {
       updated.intensityMap,
     );
     expect(project.dimensions.columns).toBe(1);
-  });
-
-  it("imports and copies a raster image into project assets", async () => {
-    const root = await temporaryDirectory();
-    const projectDirectory = path.join(root, "image-project");
-    await initializeProject(projectDirectory, {
-      name: "image-project",
-      period: { from: "2026-01-04", to: "2026-01-10" },
-      timezone: "UTC",
-      now: "2026-01-01T00:00:00.000Z",
-    });
-    const source = path.join(root, "source.png");
-    await writeFile(
-      source,
-      Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
-        "base64",
-      ),
-    );
-
-    const { project: imported } = await importImage(
-      projectDirectory,
-      source,
-      { fit: "contain" },
-      "2026-01-02T00:00:00.000Z",
-    );
-    expect(imported.source).toMatchObject({
-      type: "image",
-      path: "assets/source.png",
-    });
-    expect(
-      await readFile(path.join(projectDirectory, "assets", "source.png")),
-    ).toEqual(await readFile(source));
   });
 });

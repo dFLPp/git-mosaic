@@ -4,9 +4,9 @@
 first three activities cannot accidentally change Git history.
 
 ```text
-image / matrix
-      |
-      v
+text / matrix / manual painting
+            |
+            v
 project (mosaic.json) --> calendar + estimated preview --> terminal / SVG
       |                            ^
       |                            |
@@ -28,8 +28,6 @@ validated, confirmed Git executor --> local commits (never push)
   error codes.
 - `packages/calendar` aligns periods to Sunday-start weeks, maps dates and cells,
   generates timestamps, and estimates contribution quartiles.
-- `packages/image` decodes, orients, resizes, flattens, grayscales, and quantizes
-  raster input.
 - `packages/renderer` produces terminal and SVG output without reading files.
 - `packages/github` implements the GraphQL provider and snapshot persistence.
 - `packages/core` composes projects, imports, previews, GitHub snapshots, and
@@ -58,24 +56,24 @@ deleted without losing the artwork source.
 
 ## Side-effect boundaries
 
-| Operation             | Project files                  | Network | Git repository             |
-| --------------------- | ------------------------------ | ------- | -------------------------- |
-| `init`                | creates                        | no      | no                         |
-| `import matrix/image` | updates                        | no      | no                         |
-| `preview`             | reads; optionally writes SVG   | no      | no                         |
-| `github import`       | updates snapshot/project       | yes     | no                         |
-| `plan`                | writes plan                    | no      | no                         |
-| `plan inspect`        | reads plan                     | no      | no                         |
-| `apply --dry-run`     | reads plan/inspects Git        | no      | no writes                  |
-| confirmed `apply`     | reads plan                     | no      | creates commits            |
-| web editor            | reads/writes through local API | no*     | only after confirmed apply |
+| Operation            | Project files                  | Network | Git repository             |
+| -------------------- | ------------------------------ | ------- | -------------------------- |
+| `init`               | creates                        | no      | no                         |
+| `import matrix/text` | updates                        | no      | no                         |
+| `preview`            | reads; optionally writes SVG   | no      | no                         |
+| `github import`      | updates snapshot/project       | yes     | no                         |
+| `plan`               | writes plan                    | no      | no                         |
+| `plan inspect`       | reads plan                     | no      | no                         |
+| `apply --dry-run`    | reads plan/inspects Git        | no      | no writes                  |
+| confirmed `apply`    | reads plan                     | no      | creates commits            |
+| web editor           | reads/writes through local API | no*     | only after confirmed apply |
 
 `*` The web editor does not require a remote backend. Network access is used
 only when a GitHub import is explicitly requested through supported core APIs.
 
 ## Error model
 
-Expected failures are `GitMosaicError` values with stable codes from `GM001` to
-`GM015` and, where useful, an actionable hint. Unknown programming or system
-errors are not rewritten as successful outcomes. See
+Expected failures are `GitMosaicError` values with stable `GMxxx` codes and,
+where useful, an actionable hint. Unknown programming or system errors are not
+rewritten as successful outcomes. See
 [Troubleshooting](troubleshooting.md).

@@ -19,6 +19,11 @@ releases.
   quick start, explicit artificial-history disclosure, preview limitations, and
   repository safety gates.
 
+### Removed
+
+- Raster image import from the CLI, local web editor, core APIs, schemas, and
+  workspace packages.
+
 ## [0.1.0] - Unreleased
 
 ### Added
@@ -27,8 +32,7 @@ releases.
 - Project initialization for civil-year, rolling-year, and custom periods with
   IANA timezone validation.
 - Seven-row Sunday-start calendar model and `0..4` intensity matrices.
-- PNG, JPEG, and WebP import with contain/cover/stretch fitting, inversion, and
-  contrast control.
+- JSON intensity-matrix import and built-in pixel-font text stamping.
 - Terminal and SVG previews with light/dark themes, labels, legends, tooltips,
   confidence, and explicit color-estimate warnings.
 - Optional GitHub GraphQL contribution snapshot import with environment or stdin

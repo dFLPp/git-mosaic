@@ -64,6 +64,10 @@ export default defineConfig({
         replacement: source("packages/core/src/preview.ts"),
       },
       {
+        find: "@git-mosaic/core/messages",
+        replacement: source("packages/core/src/messages.ts"),
+      },
+      {
         find: "@git-mosaic/calendar",
         replacement: source("packages/calendar/src/index.ts"),
       },
@@ -78,10 +82,6 @@ export default defineConfig({
       {
         find: "@git-mosaic/github",
         replacement: source("packages/github/src/index.ts"),
-      },
-      {
-        find: "@git-mosaic/image",
-        replacement: source("packages/image/src/index.ts"),
       },
       {
         find: "@git-mosaic/renderer",

@@ -1,0 +1,61 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1020"
+  height="140"
+  viewBox="0 0 51 7"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Moonlit mountains contribution mosaic</title>
+  <desc id="description">
+    An exact 51 by 7 contribution-cell landscape with stars, a full moon,
+    snow-capped mountains, pine trees, a shoreline, and reflections on water.
+  </desc>
+
+  <!--
+    Every visible square is one contribution cell. The four greens below map
+    directly to contribution levels 1 through 4; the dark squares are level 0.
+
+    Matrix preview:
+    ...2.......3..............2......1......3443.......
+    .......4........3.....2.......3........344443......
+    ..............12431......131.......2....3443....2..
+    ..2.......111223432211.1223211..121............232.
+    124211112222223343222222222222311111131211111112421
+    1111111..2222222..1111111....11111......2442..11111
+    ...111111...11122211.....1111111...222...1331..1111.
+  -->
+  <defs>
+    <pattern id="cell-shape" width="1" height="1" patternUnits="userSpaceOnUse">
+      <rect x="0.08" y="0.08" width="0.84" height="0.84" rx="0.16" fill="#fff" />
+    </pattern>
+    <mask id="contribution-cells">
+      <rect width="51" height="7" fill="url(#cell-shape)" />
+    </mask>
+  </defs>
+
+  <rect width="51" height="7" fill="#0d1117" />
+  <g mask="url(#contribution-cells)">
+    <rect width="51" height="7" fill="#161b22" />
+
+    <path
+      fill="#0e4429"
+      d="M33 0h1v1h-1z M14 2h1v1h-1z M18 2h1v1h-1z M25 2h1v1h-1z M27 2h1v1h-1z M10 3h1v1h-1z M11 3h1v1h-1z M12 3h1v1h-1z M20 3h1v1h-1z M21 3h1v1h-1z M23 3h1v1h-1z M28 3h1v1h-1z M29 3h1v1h-1z M32 3h1v1h-1z M34 3h1v1h-1z M0 4h1v1h-1z M4 4h1v1h-1z M5 4h1v1h-1z M6 4h1v1h-1z M7 4h1v1h-1z M30 4h1v1h-1z M31 4h1v1h-1z M32 4h1v1h-1z M33 4h1v1h-1z M34 4h1v1h-1z M35 4h1v1h-1z M36 4h1v1h-1z M40 4h1v1h-1z M41 4h1v1h-1z M42 4h1v1h-1z M43 4h1v1h-1z M44 4h1v1h-1z M45 4h1v1h-1z M46 4h1v1h-1z M50 4h1v1h-1z M0 5h1v1h-1z M1 5h1v1h-1z M2 5h1v1h-1z M3 5h1v1h-1z M4 5h1v1h-1z M5 5h1v1h-1z M6 5h1v1h-1z M18 5h1v1h-1z M19 5h1v1h-1z M20 5h1v1h-1z M21 5h1v1h-1z M22 5h1v1h-1z M23 5h1v1h-1z M24 5h1v1h-1z M29 5h1v1h-1z M30 5h1v1h-1z M31 5h1v1h-1z M32 5h1v1h-1z M33 5h1v1h-1z M46 5h1v1h-1z M47 5h1v1h-1z M48 5h1v1h-1z M49 5h1v1h-1z M50 5h1v1h-1z M3 6h1v1h-1z M4 6h1v1h-1z M5 6h1v1h-1z M6 6h1v1h-1z M7 6h1v1h-1z M8 6h1v1h-1z M12 6h1v1h-1z M13 6h1v1h-1z M14 6h1v1h-1z M18 6h1v1h-1z M19 6h1v1h-1z M25 6h1v1h-1z M26 6h1v1h-1z M27 6h1v1h-1z M28 6h1v1h-1z M29 6h1v1h-1z M30 6h1v1h-1z M40 6h1v1h-1z M43 6h1v1h-1z M46 6h1v1h-1z M47 6h1v1h-1z M48 6h1v1h-1z M49 6h1v1h-1z"
+    />
+
+    <path
+      fill="#006d32"
+      d="M3 0h1v1h-1z M26 0h1v1h-1z M22 1h1v1h-1z M15 2h1v1h-1z M35 2h1v1h-1z M48 2h1v1h-1z M2 3h1v1h-1z M13 3h1v1h-1z M14 3h1v1h-1z M18 3h1v1h-1z M19 3h1v1h-1z M24 3h1v1h-1z M25 3h1v1h-1z M27 3h1v1h-1z M33 3h1v1h-1z M47 3h1v1h-1z M49 3h1v1h-1z M1 4h1v1h-1z M3 4h1v1h-1z M8 4h1v1h-1z M9 4h1v1h-1z M10 4h1v1h-1z M11 4h1v1h-1z M12 4h1v1h-1z M13 4h1v1h-1z M18 4h1v1h-1z M19 4h1v1h-1z M20 4h1v1h-1z M21 4h1v1h-1z M22 4h1v1h-1z M23 4h1v1h-1z M24 4h1v1h-1z M25 4h1v1h-1z M26 4h1v1h-1z M27 4h1v1h-1z M28 4h1v1h-1z M38 4h1v1h-1z M47 4h1v1h-1z M49 4h1v1h-1z M9 5h1v1h-1z M10 5h1v1h-1z M11 5h1v1h-1z M12 5h1v1h-1z M13 5h1v1h-1z M14 5h1v1h-1z M15 5h1v1h-1z M40 5h1v1h-1z M43 5h1v1h-1z M15 6h1v1h-1z M16 6h1v1h-1z M17 6h1v1h-1z M34 6h1v1h-1z M35 6h1v1h-1z M36 6h1v1h-1z"
+    />
+
+    <path
+      fill="#26a641"
+      d="M11 0h1v1h-1z M40 0h1v1h-1z M43 0h1v1h-1z M16 1h1v1h-1z M30 1h1v1h-1z M39 1h1v1h-1z M44 1h1v1h-1z M17 2h1v1h-1z M26 2h1v1h-1z M40 2h1v1h-1z M43 2h1v1h-1z M15 3h1v1h-1z M17 3h1v1h-1z M26 3h1v1h-1z M48 3h1v1h-1z M14 4h1v1h-1z M15 4h1v1h-1z M17 4h1v1h-1z M29 4h1v1h-1z M37 4h1v1h-1z M39 4h1v1h-1z M41 6h1v1h-1z M42 6h1v1h-1z"
+    />
+
+    <path
+      fill="#39d353"
+      d="M41 0h1v1h-1z M42 0h1v1h-1z M7 1h1v1h-1z M40 1h1v1h-1z M41 1h1v1h-1z M42 1h1v1h-1z M43 1h1v1h-1z M16 2h1v1h-1z M41 2h1v1h-1z M42 2h1v1h-1z M16 3h1v1h-1z M2 4h1v1h-1z M16 4h1v1h-1z M48 4h1v1h-1z M41 5h1v1h-1z M42 5h1v1h-1z"
+    />
+  </g>
+</svg>

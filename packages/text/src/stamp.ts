@@ -31,7 +31,7 @@ const TIER_QUALITY: Record<
 
 /**
  * Render text directly onto the intensity grid. Glyphs are stamped as cells,
- * never resampled through an image pipeline, so strokes stay crisp.
+ * never resampled, so strokes stay crisp.
  */
 export function stampTextOnCalendar(
   content: string,

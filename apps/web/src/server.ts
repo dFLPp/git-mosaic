@@ -1,19 +1,16 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { access, stat } from "node:fs/promises";
 import {
   createServer,
   type IncomingMessage,
   type ServerResponse,
 } from "node:http";
-import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   createCommitPlan,
-  type ImageImportOptions,
   initializeProject,
-  importImageBuffer,
   importText,
   isGitMosaicError,
   type PreviewMode,
@@ -23,11 +20,14 @@ import {
   writeCommitPlan,
   writeProject,
 } from "@git-mosaic/core";
-import { rollingYearRange, todayInTimezone } from "@git-mosaic/calendar";
-import { applyCommitPlan } from "@git-mosaic/git";
-import { quantizeRasterForDebug } from "@git-mosaic/image";
+import {
+  civilYearRange,
+  rollingYearRange,
+  todayInTimezone,
+} from "@git-mosaic/calendar";
+import { applyCommitPlan, publishRepository } from "@git-mosaic/git";
 import type { SvgRenderOptions } from "@git-mosaic/renderer";
-import { mosaicProjectSchema } from "@git-mosaic/schemas";
+import { mosaicProjectSchema, type DateRange } from "@git-mosaic/schemas";
 import type { PlanFormInput } from "./contracts.js";
 
 const SESSION_HEADER = "x-git-mosaic-session";
@@ -42,6 +42,73 @@ export interface LocalServerOptions {
   maximumBodyBytes?: number;
   /** Explicit local frontend origins trusted when requests arrive through a dev proxy. */
   allowedOrigins?: readonly string[];
+  /** Directory that holds generated projects. Defaults to `<workspace>/output`. */
+  outputRoot?: string;
+}
+
+/** Walks up from this module to the workspace root so projects land in `./output`. */
+function findWorkspaceRoot(): string {
+  let directory = fileURLToPath(new URL(".", import.meta.url));
+  for (let depth = 0; depth < 8; depth += 1) {
+    const parent = path.dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+    if (path.basename(directory) === "git-mosaic") return directory;
+  }
+  return process.cwd();
+}
+
+const DEFAULT_OUTPUT_ROOT = path.join(findWorkspaceRoot(), "output");
+
+function slugify(name: string): string {
+  const slug = name
+    .normalize("NFD")
+    .replaceAll(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, "-")
+    .replaceAll(/^-+|-+$/g, "");
+  return slug === "" ? "mosaic" : slug.slice(0, 48);
+}
+
+/** Resolves the period the editor asked for, mirroring the CLI's `init` options. */
+function resolvePeriod(
+  input: Record<string, unknown>,
+  timezone: string,
+): { period: DateRange; suffix: string } {
+  const mode = input.periodMode ?? "rolling";
+  if (mode === "year") {
+    const year = Number(input.year);
+    if (!Number.isInteger(year) || year < 1970 || year > 2100) {
+      throw new HttpError(
+        400,
+        "A four-digit year between 1970 and 2100 is required",
+      );
+    }
+    return { period: civilYearRange(year), suffix: String(year) };
+  }
+  if (mode === "custom") {
+    const from = requiredString(input, "from");
+    const to = requiredString(input, "to");
+    return { period: { from, to }, suffix: `${from}_${to}` };
+  }
+  const period = rollingYearRange(todayInTimezone(timezone));
+  return { period, suffix: `${period.from}_${period.to}` };
+}
+
+/** Never overwrites an existing project: `hire-me-2025`, then `hire-me-2025-2`, ... */
+async function uniqueDirectory(root: string, base: string): Promise<string> {
+  for (let attempt = 1; attempt < 100; attempt += 1) {
+    const candidate = path.join(
+      root,
+      attempt === 1 ? base : `${base}-${attempt}`,
+    );
+    try {
+      await access(candidate);
+    } catch {
+      return candidate;
+    }
+  }
+  throw new HttpError(409, `Too many projects named ${base}`);
 }
 
 class HttpError extends Error {
@@ -91,16 +158,34 @@ function safeError(error: unknown): { status: number; body: unknown } {
     return {
       status: 400,
       body: {
-        error: { message: "Request data does not match the required schema" },
+        error: {
+          message: "Request data does not match the required schema",
+          hint: "The local server logged the offending fields",
+        },
       },
     };
   }
+  // The response stays deliberately vague, but a 500 must never be silent:
+  // without this the only clue is "could not complete the request".
   return {
     status: 500,
     body: {
-      error: { message: "The local server could not complete the request" },
+      error: {
+        message: "The local server could not complete the request",
+        hint: "The local server logged the cause; check the terminal running it",
+      },
     },
   };
+}
+
+/** Unexpected failures are logged locally so a 500 is diagnosable. */
+function logUnexpected(route: string, error: unknown): void {
+  if (error instanceof HttpError || isGitMosaicError(error)) return;
+  process.stderr.write(
+    `git-mosaic: ${route} failed\n${
+      error instanceof Error ? (error.stack ?? error.message) : String(error)
+    }\n`,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -214,50 +299,6 @@ async function readJson(
   }
 }
 
-function imageOptions(record: Record<string, unknown>): ImageImportOptions {
-  const value = record.options;
-  if (value === undefined) return {};
-  const options = objectBody(value);
-  const fit = options.fit;
-  const invert = optionalBoolean(options, "invert");
-  const contrast = options.contrast;
-  const mode = options.mode;
-  if (
-    fit !== undefined &&
-    fit !== "contain" &&
-    fit !== "cover" &&
-    fit !== "stretch"
-  ) {
-    throw new HttpError(400, "options.fit is invalid");
-  }
-  if (
-    contrast !== undefined &&
-    (typeof contrast !== "number" ||
-      !Number.isFinite(contrast) ||
-      contrast <= 0)
-  ) {
-    throw new HttpError(
-      400,
-      "options.contrast must be a positive finite number",
-    );
-  }
-  if (mode !== undefined && mode !== "levels" && mode !== "binary") {
-    throw new HttpError(400, "options.mode is invalid");
-  }
-  const normalize = optionalBoolean(options, "normalize");
-  const dithering = optionalBoolean(options, "dithering");
-  const force = optionalBoolean(options, "force");
-  return {
-    ...(fit === undefined ? {} : { fit }),
-    ...(invert === undefined ? {} : { invert }),
-    ...(contrast === undefined ? {} : { contrast }),
-    ...(mode === undefined ? {} : { mode }),
-    ...(normalize === undefined ? {} : { normalize }),
-    ...(dithering === undefined ? {} : { dithering }),
-    ...(force === undefined ? {} : { force }),
-  };
-}
-
 function previewMode(record: Record<string, unknown>): PreviewMode {
   const mode = record.mode;
   if (mode === undefined) return "artistic";
@@ -318,6 +359,17 @@ function planInput(value: unknown): PlanFormInput {
     throw new HttpError(400, "input.expectedHead must be a string");
   if (filePath !== undefined && typeof filePath !== "string")
     throw new HttpError(400, "input.filePath must be a string");
+  const messageTemplate = input.messageTemplate;
+  if (
+    messageTemplate !== undefined &&
+    (typeof messageTemplate !== "string" || messageTemplate.trim() === "")
+  ) {
+    throw new HttpError(
+      400,
+      "input.messageTemplate must be a non-empty string",
+    );
+  }
+  const files = repositoryFiles(input.files);
   return {
     repositoryPath: requiredString(input, "repositoryPath"),
     branch: requiredString(input, "branch"),
@@ -328,7 +380,31 @@ function planInput(value: unknown): PlanFormInput {
     commitMode,
     ...(filePath === undefined ? {} : { filePath }),
     ...(allowFuture === undefined ? {} : { allowFuture }),
+    ...(messageTemplate === undefined ? {} : { messageTemplate }),
+    ...(files === undefined ? {} : { files }),
   };
+}
+
+/** Repository files are user-authored content, so they are validated, not trusted. */
+function repositoryFiles(
+  value: unknown,
+): { path: string; content: string }[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length > 10)
+    throw new HttpError(
+      400,
+      "input.files must be an array of at most 10 files",
+    );
+  return value.map((entry) => {
+    const file = objectBody(entry);
+    const filePath = requiredString(file, "path");
+    const content = file.content;
+    if (typeof content !== "string" || content.length > 64 * 1024)
+      throw new HttpError(400, "input.files[].content must be a string");
+    if (path.isAbsolute(filePath) || filePath.split(/[/\\]/).includes(".."))
+      throw new HttpError(400, `Unsafe file path: ${filePath}`);
+    return { path: filePath, content };
+  });
 }
 
 async function serveStatic(
@@ -383,6 +459,7 @@ export function createLocalServer(options: LocalServerOptions = {}) {
     options.sessionToken ?? randomBytes(32).toString("base64url");
   const maximumBodyBytes = options.maximumBodyBytes ?? DEFAULT_BODY_LIMIT;
   const staticRoot = options.staticRoot ?? DEFAULT_STATIC_ROOT;
+  const outputRoot = options.outputRoot ?? DEFAULT_OUTPUT_ROOT;
   const allowedOrigins = new Set(
     (options.allowedOrigins ?? []).map(localOrigin),
   );
@@ -411,21 +488,46 @@ export function createLocalServer(options: LocalServerOptions = {}) {
         if (url.pathname === "/api/project/create") {
           const input = objectBody(body.input);
           const timezone = requiredString(input, "timezone");
-          const projectPath = path.join(
-            tmpdir(),
-            "git-mosaic-studio",
-            `${Date.now()}-${randomBytes(6).toString("hex")}`,
+          const name = requiredString(input, "name");
+          const { period, suffix } = resolvePeriod(input, timezone);
+          const projectPath = await uniqueDirectory(
+            outputRoot,
+            `${slugify(name)}-${suffix}`,
           );
           const project = await initializeProject(projectPath, {
-            name: requiredString(input, "name"),
+            name,
             timezone,
-            period: rollingYearRange(todayInTimezone(timezone)),
+            period,
           });
           sendJson(response, 201, {
             project,
             projectPath,
             repositoryPath: path.join(projectPath, "repository"),
           });
+          return;
+        }
+        if (url.pathname === "/api/publish") {
+          const input = objectBody(body.input);
+          const createName = input.createName;
+          const remoteUrl = input.remoteUrl;
+          const report = await publishRepository({
+            repositoryPath: requiredString(input, "repositoryPath"),
+            branch: requiredString(input, "branch"),
+            ...(typeof createName === "string" && createName.trim() !== ""
+              ? {
+                  createRepository: {
+                    name: createName,
+                    visibility:
+                      input.visibility === "public" ? "public" : "private",
+                  },
+                }
+              : {}),
+            ...(typeof remoteUrl === "string" && remoteUrl.trim() !== ""
+              ? { remoteUrl }
+              : {}),
+            confirmed: optionalBoolean(input, "confirmed") ?? false,
+          });
+          sendJson(response, 200, { report });
           return;
         }
         if (url.pathname === "/api/project/load") {
@@ -441,46 +543,6 @@ export function createLocalServer(options: LocalServerOptions = {}) {
           });
           await writeProject(projectPath(body), project);
           sendJson(response, 200, { project });
-          return;
-        }
-        if (url.pathname === "/api/image/import") {
-          const data = requiredString(body, "dataBase64");
-          if (
-            !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(
-              data,
-            )
-          ) {
-            throw new HttpError(400, "dataBase64 must be valid base64");
-          }
-          const { project, report } = await importImageBuffer(
-            projectPath(body),
-            requiredString(body, "fileName"),
-            Buffer.from(data, "base64"),
-            imageOptions(body),
-          );
-          sendJson(response, 200, { project, report });
-          return;
-        }
-        if (url.pathname === "/api/image/debug") {
-          const data = requiredString(body, "dataBase64");
-          if (
-            !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u.test(
-              data,
-            )
-          ) {
-            throw new HttpError(400, "dataBase64 must be valid base64");
-          }
-          const debug = await quantizeRasterForDebug(
-            Buffer.from(data, "base64"),
-            imageOptions(body),
-          );
-          sendJson(response, 200, {
-            width: debug.width,
-            height: debug.height,
-            intensitiesBase64: Buffer.from(debug.intensities).toString(
-              "base64",
-            ),
-          });
           return;
         }
         if (url.pathname === "/api/text/import") {
@@ -535,6 +597,10 @@ export function createLocalServer(options: LocalServerOptions = {}) {
             ...(input.allowFuture === undefined
               ? {}
               : { allowFuture: input.allowFuture }),
+            ...(input.messageTemplate === undefined
+              ? {}
+              : { messageTemplate: input.messageTemplate }),
+            ...(input.files === undefined ? {} : { files: input.files }),
           });
           const planPath = path.join(
             path.resolve(targetProjectPath),
@@ -599,6 +665,7 @@ export function createLocalServer(options: LocalServerOptions = {}) {
         request.method === "HEAD",
       );
     })().catch((error: unknown) => {
+      logUnexpected(request.url ?? "/", error);
       if (response.headersSent) {
         response.destroy();
         return;

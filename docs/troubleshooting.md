@@ -21,10 +21,8 @@ and, when available, a hint.
 | `GM012` | GitHub rate limit                          | wait for reset or use the existing offline snapshot                                 |
 | `GM013` | checksum mismatch                          | restore or regenerate the plan; do not hand-edit it                                 |
 | `GM014` | future date                                | choose a past period or intentionally plan with `--allow-future`                    |
-| `GM015` | unsupported/bad image                      | valid PNG/JPEG/WebP, positive finite contrast                                       |
 | `GM016` | text does not fit                          | compare needed/available columns; shorten the text or split it across projects      |
 | `GM017` | unsupported text                           | use A-Z, 0-9, space, or one of `. ! ? - :`                                          |
-| `GM018` | low image expressibility                   | review fit signals/remedies; simplify/crop the image or intentionally use `--force` |
 
 ## Text import is refused
 
@@ -33,16 +31,6 @@ and, when available, a hint.
 multiple year projects. `GM017` names the unsupported character; the built-in
 fonts support A-Z, 0-9, space, and `. ! ? - :` (lowercase input is uppercased).
 The failed import does not modify the project.
-
-## Image import reports low expressibility
-
-`GM018` means too little of the source is expected to survive the seven-row
-grid. `aspectEfficiency` measures how well the source shape uses the wide
-canvas, `edgeSurvival` estimates how much structural edge energy remains per
-cell, and `toneSeparability` measures use of the five shades. Follow the
-reported crop, simplify, contrast, binary-mode, or dithering remedy. Use
-`--force` only after inspecting the bad fit and deliberately accepting it; the
-unforced failure writes neither the asset nor the project update.
 
 ## `gm` is not found
 
@@ -57,8 +45,9 @@ After changing TypeScript source, run `pnpm build` again.
 
 ## Plan says zero commits
 
-New projects are blank. Import an image or a correctly sized intensity matrix,
-then preview again. Intensity zero intentionally produces no commits.
+New projects are blank. Import text or a correctly sized intensity matrix, or
+paint cells in the web editor, then preview again. Intensity zero intentionally
+produces no commits.
 
 ## The matrix width is rejected
 
@@ -66,13 +55,6 @@ Read `dimensions.columns` from the generated `mosaic.json`; every one of the
 seven matrix rows must have exactly that many values. Calendar alignment can add
 out-of-period cells at either end, and those positions must be zero. See
 [Calendar model](calendar-model.md).
-
-## Image result looks reversed or cropped
-
-Try `--invert` if dark/light meaning is opposite. Choose `contain` to preserve
-the whole image with white padding, `cover` to fill while cropping, or `stretch`
-to force the exact calendar aspect ratio. `--contrast` must be greater than
-zero; values above 1 increase separation around middle gray.
 
 ## Terminal colors do not appear
 
@@ -122,6 +104,5 @@ receive different colors because the local quartiles are estimates.
 
 Include the command shape, `GMxxx` code, Node/Git versions, operating system,
 and a minimal redacted project or plan. Remove tokens, personal emails, private
-repository paths, remote URLs, and confidential image content. For a suspected
-vulnerability, follow [SECURITY.md](../SECURITY.md) instead of opening a public
-issue.
+repository paths, and remote URLs. For a suspected vulnerability, follow
+[SECURITY.md](../SECURITY.md) instead of opening a public issue.

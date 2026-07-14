@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="140" viewBox="0 0 51 7" role="img" aria-labelledby="title description">
+  <title id="title">Neon city contribution mosaic</title>
+  <desc id="description">An exact 51 by 7 contribution-cell skyline with towers, antennae, windows, and reflected city light.</desc>
+  <defs>
+    <pattern id="cells" width="1" height="1" patternUnits="userSpaceOnUse"><rect x=".08" y=".08" width=".84" height=".84" rx=".16" fill="#fff" /></pattern>
+    <mask id="grid"><rect width="51" height="7" fill="url(#cells)" /></mask>
+  </defs>
+  <rect width="51" height="7" fill="#0d1117" />
+  <g mask="url(#grid)">
+    <rect width="51" height="7" fill="#161b22" />
+    <path fill="#0e4429" d="M27 1h1v1H27z M8 2h2v1H8z M27 2h1v1H27z M31 2h2v1H31z M46 2h2v1H46z M4 3h6v1H4z M13 3h5v1H13z M19 3h2v1H19z M24 3h2v1H24z M29 3h2v1H29z M33 3h5v1H33z M41 3h6v1H41z M0 4h3v1H0z M4 4h1v1H4z M6 4h2v1H6z M9 4h2v1H9z M12 4h1v1H12z M14 4h2v1H14z M17 4h1v1H17z M19 4h1v1H19z M21 4h1v1H21z M23 4h1v1H23z M25 4h1v1H25z M29 4h2v1H29z M32 4h1v1H32z M34 4h2v1H34z M37 4h2v1H37z M40 4h1v1H40z M42 4h2v1H42z M45 4h1v1H45z M47 4h1v1H47z M49 4h2v1H49z M0 5h2v1H0z M3 5h1v1H3z M5 5h1v1H5z M7 5h2v1H7z M10 5h1v1H10z M12 5h2v1H12z M15 5h2v1H15z M19 5h2v1H19z M22 5h1v1H22z M24 5h1v1H24z M26 5h1v1H26z M28 5h1v1H28z M30 5h1v1H30z M32 5h2v1H32z M35 5h2v1H35z M38 5h2v1H38z M41 5h1v1H41z M43 5h2v1H43z M46 5h1v1H46z M48 5h1v1H48z M50 5h1v1H50z M0 6h6v1H0z M10 6h4v1H10z M18 6h4v1H18z M26 6h4v1H26z M34 6h4v1H34z M42 6h4v1H42z M50 6h1v1H50z" />
+    <path fill="#006d32" d="M3 0h1v1H3z M20 0h1v1H20z M34 0h1v1H34z M5 1h1v1H5z M39 1h1v1H39z M26 2h1v1H26z M28 2h1v1H28z M38 2h3v1H38z M2 3h2v1H2z M10 3h3v1H10z M21 3h3v1H21z M26 3h1v1H26z M28 3h1v1H28z M31 3h2v1H31z M38 3h3v1H38z M47 3h3v1H47z M5 4h1v1H5z M8 4h1v1H8z M13 4h1v1H13z M16 4h1v1H16z M20 4h1v1H20z M24 4h1v1H24z M26 4h1v1H26z M28 4h1v1H28z M33 4h1v1H33z M36 4h1v1H36z M41 4h1v1H41z M44 4h1v1H44z M48 4h1v1H48z M2 5h1v1H2z M6 5h1v1H6z M9 5h1v1H9z M14 5h1v1H14z M17 5h1v1H17z M21 5h1v1H21z M25 5h1v1H25z M29 5h1v1H29z M34 5h1v1H34z M37 5h1v1H37z M42 5h1v1H42z M45 5h1v1H45z M49 5h1v1H49z M6 6h3v1H6z M14 6h3v1H14z M22 6h3v1H22z M30 6h3v1H30z M38 6h3v1H38z M46 6h4v1H46z" />
+    <path fill="#26a641" d="M45 0h1v1H45z M18 2h1v1H18z M18 3h1v1H18z M27 3h1v1H27z M18 4h1v1H18z M27 4h1v1H27z M18 5h1v1H18z M27 5h1v1H27z" />
+    <path fill="#39d353" d="M11 0h1v1H11z M18 1h1v1H18z M3 4h1v1H3z M11 4h1v1H11z M22 4h1v1H22z M31 4h1v1H31z M39 4h1v1H39z M46 4h1v1H46z M4 5h1v1H4z M11 5h1v1H11z M23 5h1v1H23z M31 5h1v1H31z M40 5h1v1H40z M47 5h1v1H47z" />
+  </g>
+</svg>

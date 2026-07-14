@@ -10,11 +10,11 @@ export default defineConfig({
       "@git-mosaic/core/preview": fileURLToPath(
         new URL("./packages/core/src/preview.ts", import.meta.url),
       ),
+      "@git-mosaic/core/messages": fileURLToPath(
+        new URL("./packages/core/src/messages.ts", import.meta.url),
+      ),
       "@git-mosaic/core": fileURLToPath(
         new URL("./packages/core/src/index.ts", import.meta.url),
-      ),
-      "@git-mosaic/image": fileURLToPath(
-        new URL("./packages/image/src/index.ts", import.meta.url),
       ),
       "@git-mosaic/git": fileURLToPath(
         new URL("./packages/git/src/index.ts", import.meta.url),

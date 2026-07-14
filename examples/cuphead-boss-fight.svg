@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="140" viewBox="0 0 51 7" role="img" aria-labelledby="title description">
+  <title id="title">Cuphead boss-fight contribution mosaic</title>
+  <desc id="description">A 51 by 7 fan-art boss scene with a cup-headed hero firing at a giant grinning flower.</desc>
+  <defs><pattern id="cells" width="1" height="1" patternUnits="userSpaceOnUse"><rect x=".08" y=".08" width=".84" height=".84" rx=".16" fill="#fff" /></pattern><mask id="grid"><rect width="51" height="7" fill="url(#cells)" /></mask></defs>
+  <rect width="51" height="7" fill="#0d1117" />
+  <g mask="url(#grid)">
+    <rect width="51" height="7" fill="#161b22" />
+    <path fill="#0e4429" d="M4 2h1v1H4z M12 2h1v1H12z M39 2h1v1H39z M49 2h1v1H49z M5 3h1v1H5z M11 3h1v1H11z M40 3h1v1H40z M48 3h1v1H48z M6 4h1v1H6z M10 4h1v1H10z M44 4h1v1H44z M6 5h1v1H6z M10 5h1v1H10z M44 5h1v1H44z M0 6h4v1H0z M8 6h1v1H8z M13 6h7v1H13z M22 6h6v1H22z M30 6h7v1H30z M41 6h1v1H41z M49 6h2v1H49z" />
+    <path fill="#006d32" d="M8 0h1v1H8z M10 0h1v1H10z M42 0h1v1H42z M46 0h1v1H46z M5 1h7v1H5z M40 1h1v1H40z M42 1h1v1H42z M46 1h1v1H46z M48 1h1v1H48z M5 2h1v1H5z M8 2h1v1H8z M10 2h2v1H10z M40 2h1v1H40z M42 2h1v1H42z M44 2h1v1H44z M46 2h1v1H46z M48 2h1v1H48z M6 3h2v1H6z M9 3h2v1H9z M41 3h1v1H41z M43 3h3v1H43z M47 3h1v1H47z M7 4h1v1H7z M9 4h1v1H9z M42 4h2v1H42z M45 4h2v1H45z M5 5h1v1H5z M11 5h1v1H11z M40 5h2v1H40z M43 5h1v1H43z M45 5h1v1H45z M47 5h2v1H47z M4 6h2v1H4z M7 6h1v1H7z M9 6h1v1H9z M11 6h2v1H11z M20 6h2v1H20z M28 6h2v1H28z M37 6h2v1H37z M42 6h5v1H42z" />
+    <path fill="#26a641" d="M9 0h1v1H9z M43 0h1v1H43z M45 0h1v1H45z M4 1h1v1H4z M12 1h1v1H12z M41 1h1v1H41z M43 1h1v1H43z M45 1h1v1H45z M47 1h1v1H47z M6 2h2v1H6z M9 2h1v1H9z M41 2h1v1H41z M43 2h1v1H43z M45 2h1v1H45z M47 2h1v1H47z M8 3h1v1H8z M42 3h1v1H42z M46 3h1v1H46z M8 4h1v1H8z M41 4h1v1H41z M47 4h1v1H47z M7 5h1v1H7z M9 5h1v1H9z M42 5h1v1H42z M46 5h1v1H46z M6 6h1v1H6z M10 6h1v1H10z M39 6h2v1H39z M47 6h2v1H47z" />
+    <path fill="#39d353" d="M44 0h1v1H44z M44 1h1v1H44z M38 2h1v1H38z M50 2h1v1H50z M13 3h1v1H13z M18 3h1v1H18z M24 3h1v1H24z M30 3h1v1H30z M35 3h1v1H35z" />
+  </g>
+</svg>

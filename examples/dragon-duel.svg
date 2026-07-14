@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="140" viewBox="0 0 51 7" role="img" aria-labelledby="title description">
+  <title id="title">Dragon duel contribution mosaic</title>
+  <desc id="description">A 51 by 7 fantasy boss fight with a huge winged dragon breathing fire at a lone sword fighter.</desc>
+  <defs><pattern id="cells" width="1" height="1" patternUnits="userSpaceOnUse"><rect x=".08" y=".08" width=".84" height=".84" rx=".16" fill="#fff" /></pattern><mask id="grid"><rect width="51" height="7" fill="url(#cells)" /></mask></defs>
+  <rect width="51" height="7" fill="#0d1117" />
+  <g mask="url(#grid)">
+    <rect width="51" height="7" fill="#161b22" />
+    <path fill="#0e4429" d="M6 0h1v1H6z M20 0h1v1H20z M44 0h1v1H44z M5 1h1v1H5z M9 1h1v1H9z M17 1h2v1H17z M21 1h1v1H21z M4 2h1v1H4z M10 2h1v1H10z M14 2h2v1H14z M23 2h2v1H23z M3 3h1v1H3z M11 3h13v1H11z M2 4h2v1H2z M12 4h8v1H12z M22 4h2v1H22z M1 5h3v1H1z M14 5h2v1H14z M18 5h2v1H18z M23 5h1v1H23z M40 5h1v1H40z M0 6h5v1H0z M7 6h5v1H7z M16 6h3v1H16z M23 6h13v1H23z M44 6h7v1H44z" />
+    <path fill="#006d32" d="M7 0h1v1H7z M19 0h1v1H19z M6 1h1v1H6z M8 1h1v1H8z M16 1h1v1H16z M19 1h2v1H19z M22 1h1v1H22z M5 2h1v1H5z M9 2h1v1H9z M13 2h1v1H13z M16 2h7v1H16z M25 2h1v1H25z M4 3h1v1H4z M10 3h1v1H10z M24 3h2v1H24z M40 3h1v1H40z M4 4h1v1H4z M10 4h2v1H10z M20 4h2v1H20z M24 4h1v1H24z M40 4h1v1H40z M4 5h1v1H4z M13 5h1v1H13z M16 5h2v1H16z M20 5h3v1H20z M39 5h1v1H39z M41 5h1v1H41z M5 6h2v1H5z M12 6h3v1H12z M20 6h3v1H20z M37 6h6v1H37z" />
+    <path fill="#26a641" d="M8 0h1v1H8z M7 1h1v1H7z M6 2h3v1H6z M5 3h5v1H5z M26 3h1v1H26z M39 3h1v1H39z M41 3h1v1H41z M5 4h5v1H5z M39 4h1v1H39z M41 4h1v1H41z M15 6h1v1H15z M19 6h1v1H19z M36 6h1v1H36z M43 6h1v1H43z" />
+    <path fill="#39d353" d="M26 2h1v1H26z M30 2h1v1H30z M34 2h1v1H34z M28 3h1v1H28z M32 3h1v1H32z M36 3h1v1H36z M38 3h1v1H38z" />
+  </g>
+</svg>

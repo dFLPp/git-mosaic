@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="140" viewBox="0 0 51 7" role="img" aria-labelledby="title description">
+  <title id="title">Star Wars trench-run contribution mosaic</title>
+  <desc id="description">A 51 by 7 fan-art scene with an X-wing silhouette, TIE fighter, laser fire, star field, and Death Star.</desc>
+  <defs><pattern id="cells" width="1" height="1" patternUnits="userSpaceOnUse"><rect x=".08" y=".08" width=".84" height=".84" rx=".16" fill="#fff" /></pattern><mask id="grid"><rect width="51" height="7" fill="url(#cells)" /></mask></defs>
+  <rect width="51" height="7" fill="#0d1117" />
+  <g mask="url(#grid)">
+    <rect width="51" height="7" fill="#161b22" />
+    <path fill="#0e4429" d="M31 1h1v1H31z M33 1h1v1H33z M40 1h2v1H40z M47 1h2v1H47z M39 2h2v1H39z M43 2h3v1H43z M48 2h2v1H48z M7 3h1v1H7z M42 3h2v1H42z M39 4h3v1H39z M44 4h3v1H44z M48 4h2v1H48z M40 5h1v1H40z M42 5h3v1H42z M46 5h2v1H46z M1 6h1v1H1z M29 6h1v1H29z" />
+    <path fill="#006d32" d="M3 0h1v1H3z M27 0h1v1H27z M30 0h1v1H30z M34 0h1v1H34z M42 0h5v1H42z M10 1h1v1H10z M20 1h1v1H20z M30 1h1v1H30z M34 1h1v1H34z M39 1h1v1H39z M42 1h5v1H42z M49 1h1v1H49z M11 2h2v1H11z M15 2h2v1H15z M19 2h2v1H19z M30 2h1v1H30z M34 2h1v1H34z M38 2h1v1H38z M41 2h2v1H41z M46 2h2v1H46z M50 2h1v1H50z M8 3h5v1H8z M38 3h1v1H38z M40 3h2v1H40z M44 3h1v1H44z M47 3h2v1H47z M50 3h1v1H50z M11 4h2v1H11z M15 4h2v1H15z M19 4h2v1H19z M38 4h1v1H38z M42 4h2v1H42z M47 4h1v1H47z M50 4h1v1H50z M10 5h1v1H10z M20 5h1v1H20z M39 5h1v1H39z M41 5h1v1H41z M45 5h1v1H45z M48 5h2v1H48z M42 6h5v1H42z" />
+    <path fill="#26a641" d="M13 2h2v1H13z M17 2h2v1H17z M13 3h10v1H13z M39 3h1v1H39z M45 3h2v1H45z M49 3h1v1H49z M13 4h2v1H13z M17 4h2v1H17z M5 5h1v1H5z" />
+    <path fill="#39d353" d="M25 0h1v1H25z M32 1h1v1H32z M23 3h14v1H23z" />
+  </g>
+</svg>

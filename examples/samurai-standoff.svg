@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="140" viewBox="0 0 51 7" role="img" aria-labelledby="title description">
+  <title id="title">Samurai standoff contribution mosaic</title>
+  <desc id="description">A 51 by 7 cinematic scene of two sword fighters facing one another beneath a huge moon.</desc>
+  <defs><pattern id="cells" width="1" height="1" patternUnits="userSpaceOnUse"><rect x=".08" y=".08" width=".84" height=".84" rx=".16" fill="#fff" /></pattern><mask id="grid"><rect width="51" height="7" fill="url(#cells)" /></mask></defs>
+  <rect width="51" height="7" fill="#0d1117" />
+  <g mask="url(#grid)">
+    <rect width="51" height="7" fill="#161b22" />
+    <path fill="#0e4429" d="M14 1h1v1H14z M22 1h7v1H22z M36 1h1v1H36z M13 2h1v1H13z M15 2h1v1H15z M21 2h9v1H21z M35 2h1v1H35z M37 2h1v1H37z M12 3h1v1H12z M16 3h1v1H16z M21 3h9v1H21z M34 3h1v1H34z M38 3h1v1H38z M12 4h1v1H12z M16 4h1v1H16z M22 4h7v1H22z M34 4h1v1H34z M38 4h1v1H38z M11 5h1v1H11z M17 5h1v1H17z M33 5h1v1H33z M39 5h1v1H39z M0 6h4v1H0z M5 6h4v1H5z M10 6h2v1H10z M14 6h1v1H14z M17 6h5v1H17z M23 6h5v1H23z M29 6h5v1H29z M36 6h1v1H36z M39 6h3v1H39z M43 6h4v1H43z M48 6h3v1H48z" />
+    <path fill="#006d32" d="M3 0h1v1H3z M23 0h5v1H23z M44 0h1v1H44z M21 1h1v1H21z M29 1h1v1H29z M14 2h1v1H14z M20 2h1v1H20z M30 2h1v1H30z M36 2h1v1H36z M13 3h1v1H13z M15 3h1v1H15z M20 3h1v1H20z M30 3h1v1H30z M35 3h1v1H35z M37 3h1v1H37z M13 4h1v1H13z M15 4h1v1H15z M21 4h1v1H21z M29 4h1v1H29z M35 4h1v1H35z M37 4h1v1H37z M13 5h1v1H13z M15 5h1v1H15z M23 5h5v1H23z M35 5h1v1H35z M37 5h1v1H37z M4 6h1v1H4z M9 6h1v1H9z M13 6h1v1H13z M15 6h1v1H15z M22 6h1v1H22z M28 6h1v1H28z M35 6h1v1H35z M37 6h1v1H37z M42 6h1v1H42z M47 6h1v1H47z" />
+    <path fill="#26a641" d="M13 1h1v1H13z M37 1h1v1H37z M16 2h1v1H16z M34 2h1v1H34z M14 3h1v1H14z M17 3h1v1H17z M33 3h1v1H33z M36 3h1v1H36z M14 4h1v1H14z M36 4h1v1H36z M12 5h1v1H12z M16 5h1v1H16z M34 5h1v1H34z M38 5h1v1H38z M12 6h1v1H12z M16 6h1v1H16z M34 6h1v1H34z M38 6h1v1H38z" />
+  </g>
+</svg>

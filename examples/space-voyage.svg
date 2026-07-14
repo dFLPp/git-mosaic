@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="140" viewBox="0 0 51 7" role="img" aria-labelledby="title description">
+  <title id="title">Space voyage contribution mosaic</title>
+  <desc id="description">An exact 51 by 7 contribution-cell space scene with a ringed planet, star field, and a small rocket.</desc>
+  <defs>
+    <pattern id="cells" width="1" height="1" patternUnits="userSpaceOnUse"><rect x=".08" y=".08" width=".84" height=".84" rx=".16" fill="#fff" /></pattern>
+    <mask id="grid"><rect width="51" height="7" fill="url(#cells)" /></mask>
+  </defs>
+  <rect width="51" height="7" fill="#0d1117" />
+  <g mask="url(#grid)">
+    <rect width="51" height="7" fill="#161b22" />
+    <path fill="#0e4429" d="M8 1h1v1H8z M42 1h1v1H42z M3 2h1v1H3z M31 2h1v1H31z M45 2h1v1H45z M11 3h1v1H11z M39 3h1v1H39z M2 4h1v1H2z M33 4h1v1H33z M48 4h1v1H48z M7 5h1v1H7z M16 5h1v1H16z M30 5h1v1H30z M44 5h1v1H44z M12 6h1v1H12z M34 6h1v1H34z M47 6h1v1H47z" />
+    <path fill="#006d32" d="M4 0h1v1H4z M24 0h1v1H24z M46 0h1v1H46z M20 1h2v1H20z M25 1h2v1H25z M18 2h2v1H18z M27 2h2v1H27z M17 3h1v1H17z M19 3h1v1H19z M27 3h1v1H27z M29 3h1v1H29z M18 4h2v1H18z M27 4h2v1H27z M38 4h1v1H38z M40 4h1v1H40z M20 5h2v1H20z M25 5h2v1H25z M37 5h1v1H37z M41 5h1v1H41z M23 6h1v1H23z M38 6h1v1H38z M40 6h1v1H40z" />
+    <path fill="#26a641" d="M13 0h1v1H13z M35 0h1v1H35z M22 1h1v1H22z M24 1h1v1H24z M20 2h1v1H20z M26 2h1v1H26z M18 3h1v1H18z M28 3h1v1H28z M20 4h1v1H20z M26 4h1v1H26z M39 4h1v1H39z M22 5h1v1H22z M24 5h1v1H24z M38 5h1v1H38z M40 5h1v1H40z M37 6h1v1H37z M41 6h1v1H41z" />
+    <path fill="#39d353" d="M29 0h1v1H29z M23 1h1v1H23z M37 1h1v1H37z M21 2h5v1H21z M20 3h7v1H20z M21 4h5v1H21z M23 5h1v1H23z M39 5h1v1H39z M36 6h1v1H36z M42 6h1v1H42z" />
+  </g>
+</svg>

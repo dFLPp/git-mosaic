@@ -18,7 +18,12 @@ describe("web API client", () => {
       )
       .mockImplementationOnce(async (_input, init?: RequestInit) => {
         expect(JSON.parse(String(init?.body))).toEqual({
-          input: { name: "new-art", timezone: "America/Los_Angeles" },
+          input: {
+            name: "new-art",
+            timezone: "America/Los_Angeles",
+            periodMode: "year",
+            year: 2025,
+          },
         });
         return new Response(
           JSON.stringify({
@@ -34,67 +39,14 @@ describe("web API client", () => {
     await createWebApi().createProject({
       name: "new-art",
       timezone: "America/Los_Angeles",
+      periodMode: "year",
+      year: 2025,
     });
 
     expect(fetchMock).toHaveBeenLastCalledWith(
       "/api/project/create",
       expect.objectContaining({ method: "POST" }),
     );
-  });
-
-  it("uses a session header for mutations and encodes image files", async () => {
-    const fetchMock = vi.fn(
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        if (url.endsWith("/api/session")) {
-          return new Response(JSON.stringify({ session: "session-token" }), {
-            status: 200,
-          });
-        }
-        expect(init?.headers).toMatchObject({
-          "X-Git-Mosaic-Session": "session-token",
-        });
-        if (url.endsWith("/api/image/import")) {
-          const body = JSON.parse(String(init?.body)) as {
-            fileName: string;
-            dataBase64: string;
-          };
-          expect(body).toEqual({
-            fileName: "pixel.png",
-            dataBase64: "AAEC",
-            path: "/project",
-            options: {},
-          });
-        }
-        return new Response(
-          JSON.stringify({
-            project: {
-              schemaVersion: 1,
-              name: "test",
-            },
-            report: {
-              verdict: "good",
-              score: 1,
-              signals: {},
-              survives: [],
-              lost: [],
-              remedies: [],
-            },
-          }),
-          { status: 200 },
-        );
-      },
-    );
-    vi.stubGlobal("fetch", fetchMock);
-    const api = createWebApi("http://127.0.0.1:4173");
-    const file = new File([new Uint8Array([0, 1, 2])], "pixel.png", {
-      type: "image/png",
-    });
-    Object.defineProperty(file, "arrayBuffer", {
-      value: async () => new Uint8Array([0, 1, 2]).buffer,
-    });
-    await api.importImage("/project", file);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("sends text imports and the selected SVG preview mode", async () => {

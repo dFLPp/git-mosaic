@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { createInterface } from "node:readline/promises";
 import {
@@ -7,9 +8,10 @@ import {
 } from "@git-mosaic/calendar";
 import {
   createCommitPlan,
+  defaultReadme,
+  previewCommitMessage,
   GitMosaicError,
   importGitHubContributions,
-  importImage,
   importMatrix,
   importText,
   initializeProject,
@@ -20,7 +22,7 @@ import {
   writeCommitPlan,
   writePreview,
 } from "@git-mosaic/core";
-import { applyCommitPlan } from "@git-mosaic/git";
+import { applyCommitPlan, publishRepository } from "@git-mosaic/git";
 import { GitHubGraphQLProvider } from "@git-mosaic/github";
 import type { CommitLevelMap, DateRange, FitReport } from "@git-mosaic/schemas";
 import { Command, InvalidArgumentError, Option } from "commander";
@@ -90,6 +92,33 @@ async function confirmApplication(
       `Repository: ${repositoryPath}\nType plan id ${planId} to materialize commits: `,
     );
     return answer.trim() === planId;
+  } finally {
+    readline.close();
+  }
+}
+
+async function confirmPublish(
+  remoteName: string,
+  commits: number,
+): Promise<boolean> {
+  if (process.stdin.isTTY !== true || process.stdout.isTTY !== true) {
+    throw new GitMosaicError(
+      "PUBLISH_NOT_CONFIRMED",
+      "Interactive confirmation requires a terminal",
+      {
+        hint: "Review the --dry-run output and pass --yes for intentional non-interactive execution",
+      },
+    );
+  }
+  const readline = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  try {
+    const answer = await readline.question(
+      `This pushes ${commits} artwork commits to ${remoteName} and is visible to others.\nType PUSH to continue: `,
+    );
+    return answer.trim() === "PUSH";
   } finally {
     readline.close();
   }
@@ -187,7 +216,7 @@ export function createProgram(): Command {
 
   const importCommand = program
     .command("import")
-    .description("import an image, text, or intensity matrix");
+    .description("import text or an intensity matrix");
   importCommand
     .command("matrix")
     .description("import a JSON intensity matrix")
@@ -200,69 +229,6 @@ export function createProgram(): Command {
       );
       writeOutput(program, `Imported matrix into ${project.name}\n`);
     });
-  importCommand
-    .command("image")
-    .description("import a PNG, JPEG, or WebP image")
-    .argument("<input>", "image file")
-    .requiredOption("--project <path>", "mosaic project directory")
-    .addOption(
-      new Option("--fit <mode>", "image fitting mode")
-        .choices(["contain", "cover", "stretch"])
-        .default("contain"),
-    )
-    .addOption(
-      new Option("--mode <mode>", "quantization mode")
-        .choices(["levels", "binary"])
-        .default("levels"),
-    )
-    .option("--invert", "invert intensity levels")
-    .option("--contrast <multiplier>", "contrast multiplier", Number)
-    .option(
-      "--no-normalize",
-      "keep the original histogram instead of stretching it",
-    )
-    .option("--dither", "diffuse quantization error for smooth gradients")
-    .option("--force", "import even when the fit verdict is bad")
-    .action(
-      async (
-        input: string,
-        options: {
-          project: string;
-          fit: "contain" | "cover" | "stretch";
-          mode: "levels" | "binary";
-          invert?: boolean;
-          contrast?: number;
-          normalize: boolean;
-          dither?: boolean;
-          force?: boolean;
-        },
-      ) => {
-        const projectDirectory = path.resolve(options.project);
-        const { project, report } = await importImage(
-          projectDirectory,
-          path.resolve(input),
-          {
-            fit: options.fit,
-            mode: options.mode,
-            invert: options.invert ?? false,
-            normalize: options.normalize,
-            dithering: options.dither ?? false,
-            force: options.force ?? false,
-            ...(options.contrast === undefined
-              ? {}
-              : { contrast: options.contrast }),
-          },
-        );
-        writeOutput(program, `Imported image into ${project.name}\n`);
-        writeOutput(program, formatFitReport(report));
-        writeOutput(
-          program,
-          await renderProjectTerminal(projectDirectory, {
-            color: process.stdout.isTTY === true,
-          }),
-        );
-      },
-    );
   importCommand
     .command("text")
     .description("render text onto the calendar with a built-in pixel font")
@@ -397,6 +363,10 @@ export function createProgram(): Command {
     .option("--file-path <path>", "file changed in file mode")
     .option("--message-template <template>", "commit message template")
     .option(
+      "--readme [path]",
+      "commit a README.md; reads <path>, or writes a disclosure README when bare",
+    )
+    .option(
       "--levels <counts>",
       "commit counts for intensities 0–4",
       commitLevels,
@@ -428,6 +398,7 @@ export function createProgram(): Command {
         commitMode: "empty" | "file";
         filePath?: string;
         messageTemplate?: string;
+        readme?: string | boolean;
         levels?: CommitLevelMap;
         maxCommitsPerDay?: number;
         maxTotalCommits?: number;
@@ -458,6 +429,21 @@ export function createProgram(): Command {
         const hasCommitter =
           options.committerName !== undefined &&
           options.committerEmail !== undefined;
+        const readmeFiles =
+          options.readme === undefined
+            ? []
+            : [
+                {
+                  path: "README.md",
+                  content:
+                    typeof options.readme === "string"
+                      ? await readFile(path.resolve(options.readme), "utf8")
+                      : defaultReadme(
+                          project.name,
+                          `${project.period.from} to ${project.period.to}`,
+                        ),
+                },
+              ];
         const plan = createCommitPlan({
           project: planningProject,
           repository: {
@@ -492,6 +478,7 @@ export function createProgram(): Command {
             : { maximumTotalCommits: options.maxTotalCommits }),
           allowLargePlan: options.allowLargePlan ?? false,
           allowFuture: options.allowFuture ?? false,
+          ...(readmeFiles.length === 0 ? {} : { files: readmeFiles }),
         });
         const output = path.resolve(
           options.output ?? path.join(projectDirectory, "plans", "latest.json"),
@@ -499,7 +486,7 @@ export function createProgram(): Command {
         await writeCommitPlan(output, plan);
         writeOutput(
           program,
-          `Plan ${plan.planId}: ${plan.totals.days} active days, ${plan.totals.commits} commits\nWrote ${output}\n`,
+          `Plan ${plan.planId}: ${plan.totals.days} active days, ${plan.totals.commits} commits\nCommit message: ${plan.days[0]?.commits[0]?.message ?? previewCommitMessage(plan.strategy.messageTemplate, { project: plan.projectName })}\nFiles: ${plan.files === undefined ? "none" : plan.files.map((file) => file.path).join(", ")}\nWrote ${output}\n`,
         );
       },
     );
@@ -597,6 +584,89 @@ export function createProgram(): Command {
         }
       },
     );
+  program
+    .command("publish")
+    .description("push an applied mosaic repository to GitHub")
+    .argument("<repository>", "repository directory created by apply")
+    .option("--branch <branch>", "branch to push", "main")
+    .option("--remote <name>", "remote name", "origin")
+    .option("--remote-url <url>", "push to an existing remote URL")
+    .option("--create <name>", "create the repository with gh, e.g. user/art")
+    .option("--private", "create the repository as private")
+    .option("--public", "create the repository as public")
+    .option("--dry-run", "report what would be pushed and exit")
+    .option("--yes", "skip the interactive confirmation")
+    .action(
+      async (
+        repository: string,
+        options: {
+          branch: string;
+          remote: string;
+          remoteUrl?: string;
+          create?: string;
+          private?: boolean;
+          public?: boolean;
+          dryRun?: boolean;
+          yes?: boolean;
+        },
+      ) => {
+        if (options.private === true && options.public === true) {
+          throw new GitMosaicError(
+            "PUBLISH_TARGET_MISSING",
+            "Choose either --public or --private",
+          );
+        }
+        const repositoryPath = path.resolve(repository);
+        const target = {
+          repositoryPath,
+          branch: options.branch,
+          remoteName: options.remote,
+          ...(options.remoteUrl === undefined
+            ? {}
+            : { remoteUrl: options.remoteUrl }),
+          ...(options.create === undefined
+            ? {}
+            : {
+                createRepository: {
+                  name: options.create,
+                  // Private is the safe default: artwork history stays unlisted
+                  // unless the user asks for a public repository.
+                  visibility: (options.public === true
+                    ? "public"
+                    : "private") as "public" | "private",
+                },
+              }),
+        };
+
+        const preview = await publishRepository(target);
+        writeOutput(
+          program,
+          `Repository: ${preview.repositoryPath}\nBranch: ${preview.branch}\nRemote: ${preview.remoteName}${preview.remoteUrl === undefined ? "" : ` -> ${preview.remoteUrl}`}\nCreates repository: ${preview.willCreateRepository ? `yes (${options.create ?? ""}, ${options.public === true ? "public" : "private"})` : "no"}\nCommits to push: ${preview.commitsToPush}\n${preview.warnings.map((warning: string) => `Warning: ${warning}`).join("\n")}\n`,
+        );
+        if (options.dryRun === true) {
+          writeOutput(program, "Dry run only. Nothing was pushed.\n");
+          return;
+        }
+
+        const confirmed =
+          (options.yes ?? false) ||
+          (await confirmPublish(preview.remoteName, preview.commitsToPush));
+        if (!confirmed) {
+          throw new GitMosaicError(
+            "PUBLISH_NOT_CONFIRMED",
+            "The push was not confirmed",
+            { hint: "Re-run with --yes for intentional non-interactive use" },
+          );
+        }
+
+        const result = await publishRepository({ ...target, confirmed: true });
+        writeOutput(
+          program,
+          `Pushed ${result.commitsToPush} commits to ${result.remoteUrl ?? result.remoteName} (${result.branch}).\nSee docs/publishing.md to undo this.\n`,
+        );
+      },
+    );
+
   const githubCommand = program
     .command("github")
     .description("import observed contribution data from GitHub");

@@ -53,16 +53,6 @@ export const matrixSourceSchema = z.object({
   path: z.string().optional(),
 });
 
-export const imageSourceSchema = z.object({
-  type: z.literal("image"),
-  path: z.string().min(1),
-  fit: z.enum(["contain", "cover", "stretch"]).default("contain"),
-  invert: z.boolean().default(false),
-  dithering: z.boolean().default(false),
-  mode: z.enum(["levels", "binary"]).default("levels"),
-  normalize: z.boolean().default(true),
-});
-
 export const fontTierSchema = z.enum(["5x7", "4x5", "3x5"]);
 
 export const textSourceSchema = z.object({
@@ -77,19 +67,15 @@ export const emptySourceSchema = z.object({ type: z.literal("empty") });
 export const mosaicSourceSchema = z.discriminatedUnion("type", [
   emptySourceSchema,
   matrixSourceSchema,
-  imageSourceSchema,
   textSourceSchema,
 ]);
 
-export const fitVerdictSchema = z.enum(["good", "degraded", "bad"]);
+export const fitVerdictSchema = z.enum(["good", "degraded"]);
 
 export const fitReportSchema = z.object({
   verdict: fitVerdictSchema,
   score: z.number().min(0).max(1),
   signals: z.object({
-    aspectEfficiency: z.number().min(0).max(1).optional(),
-    edgeSurvival: z.number().min(0).max(1).optional(),
-    toneSeparability: z.number().min(0).max(1).optional(),
     fontTier: fontTierSchema.optional(),
     columnsUsed: z.number().int().nonnegative().optional(),
     columnsAvailable: z.number().int().positive().optional(),
@@ -188,6 +174,19 @@ export const commitPlanSchema = z
       commits: z.number().int().nonnegative(),
       maximumCommitsPerDay: z.number().int().nonnegative(),
     }),
+    /**
+     * Files materialized into the plan's first commit, so the repository is not
+     * an empty shell. They add no extra commit and change no day's count.
+     */
+    files: z
+      .array(
+        z.object({
+          path: z.string().min(1).max(255),
+          content: z.string().max(64 * 1024),
+        }),
+      )
+      .max(10)
+      .optional(),
     days: z.array(plannedDaySchema),
     checksum: z.string().regex(/^[a-f0-9]{64}$/),
   })

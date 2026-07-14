@@ -5,6 +5,7 @@ import {
   mkdir,
   readdir,
   stat,
+  writeFile,
 } from "node:fs/promises";
 import path from "node:path";
 import { execa } from "execa";
@@ -526,6 +527,27 @@ export async function applyCommitPlan(
 
   for (const commit of flatCommits.slice(report.appliedSteps)) {
     if (options.signal?.aborted) break;
+    // Repository files ride along in the first commit: no extra commit, so no
+    // extra square on the graph and no day's commit count is disturbed.
+    if (commit.step === 1 && plan.files !== undefined) {
+      for (const file of plan.files) {
+        const target = await ensureSafeFileTarget(
+          report.repositoryPath,
+          file.path,
+        );
+        if (await exists(target.absolute)) {
+          report.warnings.push(
+            `${file.path} already exists in the repository and was left untouched`,
+          );
+          continue;
+        }
+        await mkdir(path.dirname(target.absolute), { recursive: true });
+        await writeFile(target.absolute, file.content, "utf8");
+        await git(["add", "--", target.relative], {
+          cwd: report.repositoryPath,
+        });
+      }
+    }
     if (plan.strategy.commitMode === "file") {
       const fileTarget = await ensureSafeFileTarget(
         report.repositoryPath,

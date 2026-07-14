@@ -2,7 +2,6 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import sharp from "sharp";
 import { initializeProject, readProject, writeProject } from "@git-mosaic/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { createLocalServer, type LocalServerOptions } from "./server.js";
@@ -77,22 +76,173 @@ async function textProject(): Promise<string> {
   return directory;
 }
 
-async function noiseBase64(): Promise<string> {
-  const width = 520;
-  const height = 70;
-  const pixels = new Uint8Array(width * height);
-  let state = 42;
-  for (let index = 0; index < pixels.length; index += 1) {
-    state = (state * 1103515245 + 12345) % 2147483648;
-    pixels[index] = state % 2 === 0 ? 0 : 255;
-  }
-  const png = await sharp(pixels, { raw: { width, height, channels: 1 } })
-    .png()
-    .toBuffer();
-  return png.toString("base64");
-}
+describe("project creation", () => {
+  it("names the directory from the project and its span, under the output root", async () => {
+    const outputRoot = await temporaryDirectory("git-mosaic-output-");
+    const { baseUrl } = await startServer({ outputRoot });
+    const token = await session(baseUrl);
+
+    const response = await post(baseUrl, token, "/api/project/create", {
+      input: {
+        name: "Hire me!",
+        timezone: "UTC",
+        periodMode: "year",
+        year: 2025,
+      },
+    });
+
+    expect(response.status).toBe(201);
+    const body = (await response.json()) as {
+      project: { name: string; period: { from: string; to: string } };
+      projectPath: string;
+      repositoryPath: string;
+    };
+    expect(path.basename(body.projectPath)).toBe("hire-me-2025");
+    expect(path.dirname(body.projectPath)).toBe(outputRoot);
+    expect(body.project.name).toBe("Hire me!");
+    expect(body.project.period).toEqual({
+      from: "2025-01-01",
+      to: "2025-12-31",
+    });
+    expect(await readProject(body.projectPath)).toMatchObject({
+      name: "Hire me!",
+    });
+  });
+
+  it("honours a custom range and never overwrites an existing project", async () => {
+    const outputRoot = await temporaryDirectory("git-mosaic-output-");
+    const { baseUrl } = await startServer({ outputRoot });
+    const token = await session(baseUrl);
+    const input = {
+      name: "promo",
+      timezone: "UTC",
+      periodMode: "custom",
+      from: "2026-01-01",
+      to: "2026-02-01",
+    };
+
+    const first = await post(baseUrl, token, "/api/project/create", { input });
+    const second = await post(baseUrl, token, "/api/project/create", { input });
+
+    const one = (await first.json()) as {
+      projectPath: string;
+      project: { period: { from: string; to: string } };
+    };
+    const two = (await second.json()) as { projectPath: string };
+    expect(one.project.period).toEqual({
+      from: "2026-01-01",
+      to: "2026-02-01",
+    });
+    expect(path.basename(one.projectPath)).toBe("promo-2026-01-01_2026-02-01");
+    expect(path.basename(two.projectPath)).toBe(
+      "promo-2026-01-01_2026-02-01-2",
+    );
+  });
+
+  it("plans with a commit message template and a README file", async () => {
+    const outputRoot = await temporaryDirectory("git-mosaic-output-");
+    const { baseUrl } = await startServer({ outputRoot });
+    const token = await session(baseUrl);
+    const created = (await (
+      await post(baseUrl, token, "/api/project/create", {
+        input: {
+          name: "plan-files",
+          timezone: "UTC",
+          periodMode: "year",
+          year: 2025,
+        },
+      })
+    ).json()) as { projectPath: string; repositoryPath: string };
+    await post(baseUrl, token, "/api/text/import", {
+      path: created.projectPath,
+      content: "HI",
+      options: {},
+    });
+
+    const response = await post(baseUrl, token, "/api/plan/create", {
+      path: created.projectPath,
+      input: {
+        repositoryPath: created.repositoryPath,
+        branch: "main",
+        repositoryMode: "new",
+        authorName: "Example User",
+        authorEmail: "user@example.com",
+        commitMode: "empty",
+        messageTemplate: "art: {project} {date}",
+        files: [{ path: "README.md", content: "# plan-files\n" }],
+      },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      plan: {
+        strategy: { messageTemplate: string };
+        files: { path: string; content: string }[];
+        days: { commits: { message: string }[] }[];
+      };
+    };
+    expect(body.plan.strategy.messageTemplate).toBe("art: {project} {date}");
+    expect(body.plan.files).toEqual([
+      { path: "README.md", content: "# plan-files\n" },
+    ]);
+    expect(body.plan.days[0]?.commits[0]?.message).toMatch(/^art: plan-files /);
+  });
+
+  it("refuses repository files that escape the repository", async () => {
+    const outputRoot = await temporaryDirectory("git-mosaic-output-");
+    const { baseUrl } = await startServer({ outputRoot });
+    const token = await session(baseUrl);
+    const created = (await (
+      await post(baseUrl, token, "/api/project/create", {
+        input: {
+          name: "escape",
+          timezone: "UTC",
+          periodMode: "year",
+          year: 2025,
+        },
+      })
+    ).json()) as { projectPath: string; repositoryPath: string };
+
+    const response = await post(baseUrl, token, "/api/plan/create", {
+      path: created.projectPath,
+      input: {
+        repositoryPath: created.repositoryPath,
+        branch: "main",
+        repositoryMode: "new",
+        authorName: "Example User",
+        authorEmail: "user@example.com",
+        commitMode: "empty",
+        files: [{ path: "../../etc/passwd", content: "x" }],
+      },
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects an out-of-range year", async () => {
+    const outputRoot = await temporaryDirectory("git-mosaic-output-");
+    const { baseUrl } = await startServer({ outputRoot });
+    const token = await session(baseUrl);
+
+    const response = await post(baseUrl, token, "/api/project/create", {
+      input: { name: "x", timezone: "UTC", periodMode: "year", year: 1800 },
+    });
+
+    expect(response.status).toBe(400);
+  });
+});
 
 describe("local web server boundaries", () => {
+  it("does not expose the removed image routes", async () => {
+    const { baseUrl } = await startServer();
+    const token = await session(baseUrl);
+
+    for (const route of ["/api/image/import", "/api/image/debug"]) {
+      const response = await post(baseUrl, token, route, {});
+      expect(response.status).toBe(404);
+    }
+  });
+
   it("binds through the caller, serves static files, and protects every POST", async () => {
     const staticRoot = await temporaryDirectory("git-mosaic-web-static-");
     await writeFile(
@@ -237,43 +387,6 @@ describe("local web API", () => {
       "<svg",
     );
 
-    const png =
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
-    const debugResponse = await post(baseUrl, token, "/api/image/debug", {
-      fileName: "pixel.png",
-      dataBase64: png,
-      options: {},
-    });
-    expect(debugResponse.status).toBe(200);
-    const debug = (await debugResponse.json()) as {
-      width: number;
-      height: number;
-      intensitiesBase64: string;
-    };
-    expect(debug).toMatchObject({ width: 1, height: 1 });
-    expect(Buffer.from(debug.intensitiesBase64, "base64")).toHaveLength(1);
-
-    const importResponse = await post(baseUrl, token, "/api/image/import", {
-      path: projectPath,
-      fileName: "pixel.png",
-      dataBase64: png,
-      options: { fit: "stretch", invert: true },
-    });
-    expect(importResponse.status).toBe(200);
-    const { project: imported } = (await importResponse.json()) as {
-      project: { intensityMap: number[][]; source: { type: string } };
-    };
-    expect(imported.source.type).toBe("image");
-    imported.intensityMap[0]![0] = 1;
-    expect(
-      (
-        await post(baseUrl, token, "/api/project/save", {
-          path: projectPath,
-          project: imported,
-        })
-      ).status,
-    ).toBe(200);
-
     const planResponse = await post(baseUrl, token, "/api/plan/create", {
       path: projectPath,
       input: {
@@ -392,40 +505,6 @@ describe("text import over the local API", () => {
     };
     expect(body.error.code).toBe("GM016");
     expect(body.error.message).toMatch(/columns/);
-  });
-});
-
-describe("image import fit gate over the local API", () => {
-  it("blocks a low-expressibility image and honors force", async () => {
-    const directory = await textProject();
-    const { baseUrl } = await startServer();
-    const token = await session(baseUrl);
-    const dataBase64 = await noiseBase64();
-
-    const blocked = await post(baseUrl, token, "/api/image/import", {
-      path: directory,
-      fileName: "noise.png",
-      dataBase64,
-    });
-    expect(blocked.ok).toBe(false);
-    expect(
-      ((await blocked.json()) as { error: { code: string } }).error.code,
-    ).toBe("GM018");
-
-    const forced = await post(baseUrl, token, "/api/image/import", {
-      path: directory,
-      fileName: "noise.png",
-      dataBase64,
-      options: { force: true },
-    });
-    expect(forced.status).toBe(200);
-    const body = (await forced.json()) as {
-      project: { source: { type: string } };
-      report: { verdict: string; remedies: string[] };
-    };
-    expect(body.project.source.type).toBe("image");
-    expect(body.report.verdict).toBe("bad");
-    expect(body.report.remedies.length).toBeGreaterThan(0);
   });
 });
 

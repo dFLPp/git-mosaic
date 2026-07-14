@@ -1,12 +1,12 @@
-import type { ImageImportOptions, PreviewMode } from "@git-mosaic/core";
-import type { ExecutionResult } from "@git-mosaic/git";
-import type { RasterImportOptions } from "@git-mosaic/image";
+import type { PreviewMode } from "@git-mosaic/core";
+import type { ExecutionResult, PublishReport } from "@git-mosaic/git";
 import type { SvgRenderOptions } from "@git-mosaic/renderer";
 import type { CommitPlan, MosaicProject } from "@git-mosaic/schemas";
 import type {
   CreateProjectInput,
   ImportOutcome,
   PlanFormInput,
+  PublishFormInput,
   WebApi,
 } from "./contracts.js";
 
@@ -24,15 +24,6 @@ async function parseResponse<T>(response: Response): Promise<T> {
     );
   }
   return value;
-}
-
-function bufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let offset = 0; offset < bytes.length; offset += 32_768) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + 32_768));
-  }
-  return btoa(binary);
 }
 
 export function createWebApi(baseUrl = ""): WebApi {
@@ -78,29 +69,10 @@ export function createWebApi(baseUrl = ""): WebApi {
         })
       ).project;
     },
-    async importImage(projectPath, file, options: ImageImportOptions = {}) {
-      return post<ImportOutcome>("/api/image/import", {
-        path: projectPath,
-        fileName: file.name,
-        dataBase64: bufferToBase64(await file.arrayBuffer()),
-        options,
-      });
-    },
     async importText(projectPath, content, options = {}) {
       return post<ImportOutcome>("/api/text/import", {
         path: projectPath,
         content,
-        options,
-      });
-    },
-    async debugImage(file, options: RasterImportOptions = {}) {
-      return post<{
-        width: number;
-        height: number;
-        intensitiesBase64: string;
-      }>("/api/image/debug", {
-        fileName: file.name,
-        dataBase64: bufferToBase64(await file.arrayBuffer()),
         options,
       });
     },
@@ -139,6 +111,10 @@ export function createWebApi(baseUrl = ""): WebApi {
           ...options,
         })
       ).result;
+    },
+    async publish(input: PublishFormInput) {
+      return (await post<{ report: PublishReport }>("/api/publish", { input }))
+        .report;
     },
   };
 }

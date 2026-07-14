@@ -42,12 +42,8 @@
     "@git-mosaic/core": "workspace:*",
     "@git-mosaic/git": "workspace:*",
     "@git-mosaic/github": "workspace:*",
-    "@git-mosaic/image": "workspace:*",
     "@git-mosaic/renderer": "workspace:*",
     "@git-mosaic/schemas": "workspace:*",
     "commander": "^13.1.0"
-  },
-  "devDependencies": {
-    "sharp": "^0.34.1"
   }
 }

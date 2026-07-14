@@ -12,6 +12,19 @@ import {
   verifyCommitPlan,
 } from "@git-mosaic/schemas/plan-integrity";
 import { buildPreviewCalendar } from "./preview.js";
+import { DEFAULT_MESSAGE_TEMPLATE, renderMessage } from "./messages.js";
+
+export {
+  DEFAULT_MESSAGE_TEMPLATE,
+  defaultReadme,
+  previewCommitMessage,
+  renderMessage,
+} from "./messages.js";
+
+export {
+  calculatePlanChecksum,
+  verifyCommitPlan,
+} from "@git-mosaic/schemas/plan-integrity";
 
 export interface CommitPlannerInput {
   project: MosaicProject;
@@ -26,6 +39,8 @@ export interface CommitPlannerInput {
   commitMode?: "empty" | "file";
   filePath?: string;
   messageTemplate?: string;
+  /** Files written into the plan's first commit, e.g. a README.md. */
+  files?: readonly { path: string; content: string }[];
   maximumCommitsPerDay?: number;
   maximumTotalCommits?: number;
   allowLargePlan?: boolean;
@@ -33,34 +48,10 @@ export interface CommitPlannerInput {
   generatedAt?: string;
 }
 
-const defaultMessageTemplate = "git-mosaic: pixel {date} ({index}/{total})";
-
-export {
-  calculatePlanChecksum,
-  verifyCommitPlan,
-} from "@git-mosaic/schemas/plan-integrity";
-
-function renderMessage(
-  template: string,
-  values: {
-    date: string;
-    timestamp: string;
-    index: number;
-    total: number;
-    intensity: number;
-    project: string;
-  },
-): string {
-  return template.replaceAll(
-    /\{(date|timestamp|index|total|intensity|project)\}/g,
-    (_, key: string) => String(values[key as keyof typeof values]),
-  );
-}
-
 export function createCommitPlan(input: CommitPlannerInput): CommitPlan {
   const maximumCommitsPerDay = input.maximumCommitsPerDay ?? 50;
   const maximumTotalCommits = input.maximumTotalCommits ?? 5_000;
-  const messageTemplate = input.messageTemplate ?? defaultMessageTemplate;
+  const messageTemplate = input.messageTemplate ?? DEFAULT_MESSAGE_TEMPLATE;
   const commitMode = input.commitMode ?? "empty";
   const committer = input.committer ?? input.author;
   if (
@@ -165,6 +156,9 @@ export function createCommitPlan(input: CommitPlannerInput): CommitPlan {
       levelMap: input.project.commitLevelMap,
       messageTemplate,
     },
+    ...(input.files === undefined || input.files.length === 0
+      ? {}
+      : { files: input.files.map((file) => ({ ...file })) }),
     totals: {
       days: days.length,
       commits: totalCommits,

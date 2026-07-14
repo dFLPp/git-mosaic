@@ -8,7 +8,6 @@ const manifestPaths = [
   "packages/core/package.json",
   "packages/git/package.json",
   "packages/github/package.json",
-  "packages/image/package.json",
   "packages/renderer/package.json",
   "packages/schemas/package.json",
 ];

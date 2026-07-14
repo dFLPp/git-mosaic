@@ -1,8 +1,13 @@
 # git-mosaic
 
-`git-mosaic` is a local, preview-first CLI that turns a 7-row pixel image into a
-deterministic plan of dated Git commits. Designing and previewing are separate
-from touching a repository, and the tool never pushes.
+[![CI](https://github.com/dFLPp/git-mosaic/actions/workflows/ci.yml/badge.svg)](https://github.com/dFLPp/git-mosaic/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
+
+`git-mosaic` is a local, preview-first tool for designing a 7-row contribution
+grid and turning it into a deterministic plan of dated Git commits. Designing,
+previewing, and planning are separate from touching a repository, and nothing
+leaves your machine until you explicitly publish.
 
 > [!IMPORTANT]
 > The generated history is contribution artwork, not a record of development
@@ -10,12 +15,24 @@ from touching a repository, and the tool never pushes.
 > final contribution levels and colors are calculated by GitHub and can differ
 > from the local preview.
 
-The current release supports JSON intensity matrices, PNG/JPEG/WebP images,
-crisp pixel-font text, import fit verdicts, terminal and SVG previews, new or
-existing repositories, empty or file commits, safe resumable application, an
-optional GitHub contribution snapshot, and a local web editor.
+It supports crisp pixel-font text, JSON intensity matrices, text fit verdicts,
+terminal and SVG previews, any time span (a calendar year, a rolling year, or an
+arbitrary date range), custom commit messages, a committed `README.md`, new or
+existing repositories, safe resumable application, an optional GitHub
+contribution snapshot, a gated `publish` step, and a local web editor.
 
 ![Example contribution mosaic preview](docs/assets/preview.svg)
+
+## Examples
+
+Every mosaic below is a real contribution grid rendered by `gm preview`. See
+[`examples/`](examples/).
+
+|                                                |                                                      |
+| ---------------------------------------------- | ---------------------------------------------------- |
+| ![Neon city](examples/neon-city.svg)           | ![Moonlit mountains](examples/moonlit-mountains.svg) |
+| ![Ocean sailboat](examples/ocean-sailboat.svg) | ![Desert sunset](examples/desert-sunset.svg)         |
+| ![Space voyage](examples/space-voyage.svg)     | ![Dragon duel](examples/dragon-duel.svg)             |
 
 ## Requirements and installation
 
@@ -53,22 +70,13 @@ explicitly run with `--allow-future`.
 gm init demo --year 2025 --timezone America/Sao_Paulo
 ```
 
-Import a PNG, JPEG, or WebP image. The source is copied into the project and
-converted to a 7-row intensity map.
-
-```bash
-gm import image ./art.png --project ./demo --fit contain
-gm preview --project ./demo
-gm preview --project ./demo --theme light --output ./demo/exports/preview.svg
-```
-
-Text is stamped directly onto calendar cells, so its strokes are never blurred
-by image resampling:
+Text is stamped directly onto calendar cells, so its strokes stay crisp:
 
 ```bash
 gm import text "Loading..." --project ./demo
 gm preview --project ./demo            # shows exactly what you drew
 gm preview --project ./demo --estimate # GitHub-style quartile estimate
+gm preview --project ./demo --theme light --output ./demo/exports/preview.svg
 ```
 
 Create and inspect a deterministic plan. Use an email associated with the
@@ -94,7 +102,60 @@ gm apply ./demo/plans/latest.json --init-repository
 
 In a terminal you must type the plan ID. For intentional non-interactive use,
 add `--yes`. The command creates local commits but does not configure a remote
-or push. Publishing remains a manual user action.
+or push. Publishing is a separate, explicitly confirmed step: see
+[Publishing and reverting](docs/publishing.md).
+
+## Commit messages and the repository README
+
+Every commit's message comes from a template. The default is:
+
+```
+git-mosaic: pixel {date} ({index}/{total})
+```
+
+Placeholders: `{date}` `{timestamp}` `{index}` `{total}` `{intensity}`
+`{project}`. Override it with `--message-template`, and pass `--readme` to
+commit a `README.md` so the repository is not an empty shell when someone
+clicks through from your contribution graph:
+
+```bash
+gm plan --project ./demo --repo ../demo-history \
+  --author-name "Example User" --author-email "user@example.com" \
+  --message-template "art: {project} pixel {date} ({index}/{total})" \
+  --readme                      # or --readme ./my-readme.md
+```
+
+`gm plan` prints the exact message the commits will carry. The README is
+written into the plan's **first commit**, so it adds no extra commit and does
+not change any day's commit count. On an existing repository a file that is
+already there is never overwritten.
+
+The web editor exposes the same two controls in its Plan step, with a live
+preview of the rendered message.
+
+## Publishing
+
+Commits only reach the GitHub contribution graph once they are pushed **and**
+the author email is verified on the account. `gm publish` is the only command
+that touches the network. It never force-pushes, never rewrites history, and
+only ever pushes the single branch you name.
+
+```bash
+gm publish ./demo/repository --dry-run                       # report only
+gm publish ./demo/repository --create you/demo --private     # create with gh
+gm publish ./demo/repository --remote-url git@github.com:you/demo.git
+```
+
+It prints the remote, branch, and commit count, then requires you to type
+`PUSH`. Use `--yes` only for intentional non-interactive runs. Read
+[Publishing and reverting](docs/publishing.md) before publishing, and for how
+to undo a push.
+
+To **change a mosaic that is already live**, do not delete the repository —
+deleting leaves the contribution graph stale for up to 24 hours. Regenerate the
+history and force-push it over the same repository instead. `git-mosaic` will
+not force-push for you; the exact steps are in
+[Replacing a published mosaic](docs/publishing.md#replacing-a-published-mosaic).
 
 ## Existing repositories
 
@@ -119,7 +180,8 @@ gm apply ./demo/plans/latest.json --allow-existing-repository
 
 If a target has remotes, both dry-run and apply also require
 `--allow-repository-with-remotes`. This is an acknowledgement only;
-`git-mosaic` still never pushes.
+`git-mosaic` still never pushes during `apply`; pushing is only ever done by
+the separate `publish` command.
 
 ## GitHub-aware preview
 
@@ -150,11 +212,11 @@ pnpm --filter @git-mosaic/web-local start
 ```
 
 Then open `http://127.0.0.1:4173`. The editor supports keyboard-accessible
-painting, numeric intensity labels, zoom, undo/redo, image and text import, fit
-verdicts with an explicit force retry, artistic/estimate preview modes, SVG
-export, English/Portuguese UI, plan review, dry-run, and confirmed application.
+painting, numeric intensity labels, zoom, undo/redo, text import and fit
+verdicts, artistic/estimate preview modes, SVG export, English/Portuguese UI,
+plan review, dry-run, and confirmed application.
 It uses a random local session header, same-origin checks, a request-size limit,
-and a strict Content Security Policy. It never pushes.
+and a strict Content Security Policy. Publishing is a separate, confirmed step.
 
 ## What the preview means
 
@@ -177,13 +239,16 @@ this tool's control.
 - local hooks and commit signing are disabled for generated commits;
 - author, committer, timestamps, messages, and trailers are explicit;
 - every commit carries plan/step/date trailers for verification and resume;
-- no command performs `git push`, force-pushes, or rewrites existing history.
+- designing, previewing, planning, and applying never reach the network;
+- only `publish` pushes, and only after an explicit typed confirmation;
+- no command force-pushes or rewrites existing history.
 
 Read [Git generation, safety, and resume](docs/git-generation.md) before using
 `apply` on a repository you care about.
 
 ## Documentation
 
+- [Publishing and reverting](docs/publishing.md)
 - [Architecture](docs/architecture.md)
 - [Calendar model](docs/calendar-model.md)
 - [GitHub preview and tokens](docs/github-preview.md)
@@ -197,10 +262,10 @@ Read [Git generation, safety, and resume](docs/git-generation.md) before using
 
 - Preview colors show the selected artistic or estimate mode, not a promise of
   GitHub's rendering.
-- The CLI does not push, create a GitHub repository, or verify that GitHub will
-  count a commit.
-- Image import supports PNG, JPEG, and WebP only; SVG and animated formats are
-  not accepted.
+- `git-mosaic` cannot verify that GitHub will count a commit: that depends on
+  your verified email, the default branch, and fork status. See
+  [Publishing and reverting](docs/publishing.md).
+- Creating a repository with `--create` requires the GitHub CLI (`gh`).
 - The week always starts on Sunday and the canvas always has seven rows.
 - Text supports A-Z, 0-9, space, and `. ! ? - :` at three font sizes; text that
   cannot fit at the smallest legible font is refused with remedies rather than

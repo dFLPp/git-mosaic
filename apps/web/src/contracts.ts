@@ -1,6 +1,5 @@
-import type { ImageImportOptions, PreviewMode } from "@git-mosaic/core";
-import type { ExecutionResult } from "@git-mosaic/git";
-import type { RasterImportOptions } from "@git-mosaic/image";
+import type { PreviewMode } from "@git-mosaic/core";
+import type { ExecutionResult, PublishReport } from "@git-mosaic/git";
 import type { SvgRenderOptions } from "@git-mosaic/renderer";
 import type {
   CommitPlan,
@@ -19,11 +18,22 @@ export interface PlanFormInput {
   commitMode: "empty" | "file";
   filePath?: string;
   allowFuture?: boolean;
+  messageTemplate?: string;
+  /** Files committed into the plan's first commit, e.g. a README.md. */
+  files?: { path: string; content: string }[];
 }
+
+export type PeriodMode = "year" | "custom" | "rolling";
 
 export interface CreateProjectInput {
   name: string;
   timezone: string;
+  periodMode: PeriodMode;
+  /** Required when periodMode is "year". */
+  year?: number;
+  /** Both required when periodMode is "custom". */
+  from?: string;
+  to?: string;
 }
 
 export interface CreateProjectResult {
@@ -32,15 +42,20 @@ export interface CreateProjectResult {
   repositoryPath: string;
 }
 
-export interface ImageDebugResult {
-  width: number;
-  height: number;
-  intensitiesBase64: string;
-}
-
 export interface ImportOutcome {
   project: MosaicProject;
   report: FitReport;
+}
+
+export interface PublishFormInput {
+  repositoryPath: string;
+  branch: string;
+  /** Create the repository with the GitHub CLI, e.g. "octocat/art". */
+  createName?: string;
+  visibility?: "public" | "private";
+  /** Push to a repository the user already created. */
+  remoteUrl?: string;
+  confirmed?: boolean;
 }
 
 export interface WebApi {
@@ -50,20 +65,11 @@ export interface WebApi {
     projectPath: string,
     project: MosaicProject,
   ): Promise<MosaicProject>;
-  importImage(
-    projectPath: string,
-    file: File,
-    options?: ImageImportOptions,
-  ): Promise<ImportOutcome>;
   importText(
     projectPath: string,
     content: string,
     options?: { align?: "left" | "center" | "right" },
   ): Promise<ImportOutcome>;
-  debugImage(
-    file: File,
-    options?: RasterImportOptions,
-  ): Promise<ImageDebugResult>;
   renderSvg(
     projectPath: string,
     options?: SvgRenderOptions,
@@ -84,6 +90,7 @@ export interface WebApi {
       allowRepositoryWithRemotes?: boolean;
     },
   ): Promise<ExecutionResult>;
+  publish(input: PublishFormInput): Promise<PublishReport>;
 }
 
 export interface MosaicEditorState {

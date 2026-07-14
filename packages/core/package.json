@@ -17,6 +17,10 @@
     "./preview": {
       "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
+    },
+    "./messages": {
+      "types": "./dist/messages.d.ts",
+      "default": "./dist/messages.js"
     }
   },
   "engines": {
@@ -35,12 +39,8 @@
   "dependencies": {
     "@git-mosaic/calendar": "workspace:*",
     "@git-mosaic/github": "workspace:*",
-    "@git-mosaic/image": "workspace:*",
     "@git-mosaic/renderer": "workspace:*",
     "@git-mosaic/schemas": "workspace:*",
     "@git-mosaic/text": "workspace:*"
-  },
-  "devDependencies": {
-    "sharp": "^0.34.1"
   }
 }

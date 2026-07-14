@@ -37,6 +37,7 @@ function planFor(
     filePath?: string;
     repositoryMode?: "new" | "existing";
     expectedHead?: string;
+    files?: { path: string; content: string }[];
   } = {},
 ) {
   const project = createProject({
@@ -60,6 +61,7 @@ function planFor(
     committer: { name: "Mosaic Committer", email: "committer@example.com" },
     commitMode: options.commitMode ?? "empty",
     ...(options.filePath === undefined ? {} : { filePath: options.filePath }),
+    ...(options.files === undefined ? {} : { files: options.files }),
     generatedAt: "2026-01-01T00:00:00.000Z",
   });
 }
@@ -304,4 +306,77 @@ describe("existing repository safeguards", () => {
       ).rejects.toThrow(/Unsafe commit file path/);
     },
   );
+});
+
+describe("repository files", () => {
+  it("commits a README in the first commit without adding a commit", async () => {
+    const root = await temporaryDirectory();
+    const repository = path.join(root, "art");
+    const plan = planFor(repository, {
+      intensity: 2,
+      files: [{ path: "README.md", content: "# generated art\n" }],
+    });
+
+    const result = await applyCommitPlan(plan, { confirmed: true });
+
+    // The file rides along: the commit count still matches the plan exactly.
+    expect(result.createdCommits).toBe(plan.totals.commits);
+    expect(await readFile(path.join(repository, "README.md"), "utf8")).toBe(
+      "# generated art\n",
+    );
+
+    // It is committed, not merely left in the worktree.
+    const status = await execa("git", ["status", "--porcelain"], {
+      cwd: repository,
+    });
+    expect(status.stdout.trim()).toBe("");
+
+    // And it belongs to the very first commit of the plan (the root commit;
+    // `log --reverse --max-count=1` would apply the limit before reversing).
+    const firstCommit = await execa(
+      "git",
+      ["rev-list", "--max-parents=0", "HEAD"],
+      { cwd: repository },
+    );
+    const files = await execa(
+      "git",
+      ["show", "--name-only", "--format=", firstCommit.stdout.trim()],
+      { cwd: repository },
+    );
+    expect(files.stdout.trim()).toBe("README.md");
+  });
+
+  it("never overwrites a file that already exists in the repository", async () => {
+    const root = await temporaryDirectory();
+    const repository = path.join(root, "existing");
+    await mkdir(repository, { recursive: true });
+    await execa("git", ["init", "--initial-branch", "main"], {
+      cwd: repository,
+    });
+    await execa("git", ["config", "user.name", "Real Person"], {
+      cwd: repository,
+    });
+    await execa("git", ["config", "user.email", "real@example.com"], {
+      cwd: repository,
+    });
+    await writeFile(path.join(repository, "README.md"), "# my real project\n");
+    await execa("git", ["add", "."], { cwd: repository });
+    await execa("git", ["commit", "-m", "real work"], { cwd: repository });
+    const head = await execa("git", ["rev-parse", "HEAD"], { cwd: repository });
+
+    const plan = planFor(repository, {
+      repositoryMode: "existing",
+      expectedHead: head.stdout.trim(),
+      files: [{ path: "README.md", content: "# artwork\n" }],
+    });
+    const result = await applyCommitPlan(plan, {
+      confirmed: true,
+      allowExistingRepository: true,
+    });
+
+    expect(await readFile(path.join(repository, "README.md"), "utf8")).toBe(
+      "# my real project\n",
+    );
+    expect(result.warnings.join(" ")).toContain("left untouched");
+  });
 });
