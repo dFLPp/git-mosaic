@@ -1,0 +1,16 @@
+# Check every text file out with LF, on every platform. Without this, Windows
+# checks out CRLF and Prettier (which defaults to LF) reports every file as
+# malformatted, so `pnpm format:check` fails on Windows only.
+* text=auto eol=lf
+
+# Never touch binaries.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.tgz binary
+*.woff binary
+*.woff2 binary
+
+# Keep the lockfile out of diffs and language stats.
+pnpm-lock.yaml linguist-generated=true -diff
