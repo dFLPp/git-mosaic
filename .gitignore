@@ -5,3 +5,12 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 *.log
+
+# generated mosaic projects (contain your own repos + plans)
+output/
+
+# `pnpm pack` output, rebuilt by the release workflow
+artifacts/
+
+# local, agent-oriented implementation notes; not part of the product
+PLAN.md
