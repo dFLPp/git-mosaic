@@ -8,7 +8,8 @@ const destination = resolve(workspaceRoot, process.argv[2] ?? "artifacts");
 await rm(destination, { force: true, recursive: true });
 await mkdir(destination, { recursive: true });
 
-const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+const onWindows = process.platform === "win32";
+const pnpm = onWindows ? "pnpm.cmd" : "pnpm";
 const result = spawnSync(
   pnpm,
   [
@@ -19,9 +20,13 @@ const result = spawnSync(
     "./packages/*",
     "pack",
     "--pack-destination",
-    destination,
+    // Under a shell the arguments are re-parsed, so a path containing spaces
+    // has to be quoted.
+    onWindows ? `"${destination}"` : destination,
   ],
-  { cwd: workspaceRoot, stdio: "inherit" },
+  // Node refuses to spawn a .cmd shim without a shell (CVE-2024-27980), so on
+  // Windows this fails with EINVAL otherwise.
+  { cwd: workspaceRoot, stdio: "inherit", shell: onWindows },
 );
 
 if (result.error) {

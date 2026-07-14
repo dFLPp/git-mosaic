@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const workspaceRoot = resolve(import.meta.dirname, "..");
-const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+const onWindows = process.platform === "win32";
+const pnpm = onWindows ? "pnpm.cmd" : "pnpm";
 const result = spawnSync(
   pnpm,
   [
@@ -16,7 +17,9 @@ const result = spawnSync(
     "--dry-run",
     "--json",
   ],
-  { cwd: workspaceRoot, encoding: "utf8" },
+  // Node refuses to spawn a .cmd shim without a shell (CVE-2024-27980), so on
+  // Windows this fails with EINVAL otherwise. Every argument here is a literal.
+  { cwd: workspaceRoot, encoding: "utf8", shell: onWindows },
 );
 
 if (result.error) {
