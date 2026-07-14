@@ -77,6 +77,14 @@ describe("mosaic projects", () => {
     );
     expect(updated.intensityMap[1]?.[0]).toBe(4);
 
+    // mosaic.json travels between machines, so the recorded source path must
+    // use POSIX separators even when it was written on Windows.
+    expect(updated.source).toMatchObject({
+      type: "matrix",
+      path: "../matrix.json",
+    });
+    expect(JSON.stringify(updated.source)).not.toContain("\\");
+
     await writeFile(matrixPath, "[[9]]");
     await expect(importMatrix(projectDirectory, matrixPath)).rejects.toThrow(
       /GM004|Invalid matrix/,

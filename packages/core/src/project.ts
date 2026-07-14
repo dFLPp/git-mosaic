@@ -198,10 +198,13 @@ export async function importMatrix(
     updatedAt: now,
     source: {
       type: "matrix",
-      path: path.relative(
-        path.resolve(projectDirectory),
-        path.resolve(matrixFile),
-      ),
+      // mosaic.json is portable, so the recorded path uses POSIX separators.
+      // path.relative yields backslashes on Windows, which would not resolve
+      // anywhere else.
+      path: path
+        .relative(path.resolve(projectDirectory), path.resolve(matrixFile))
+        .split(path.sep)
+        .join(path.posix.sep),
     },
     intensityMap: matrix,
   });
